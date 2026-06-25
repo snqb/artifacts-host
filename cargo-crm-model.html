@@ -38,33 +38,24 @@ mermaid.initialize({
     line-height: 1.7;
   }
   .container { max-width: 1200px; margin: 0 auto; }
-
   h1 {
     font-size: 30px; color: #2c3e50; margin-bottom: 8px;
     border-bottom: 2px solid #e0e0e0; padding-bottom: 16px;
   }
   .subtitle { color: #666; font-size: 15px; margin-bottom: 40px; }
-
   h2 {
     font-size: 22px; color: #2c3e50; margin: 48px 0 20px;
     padding: 12px 16px; background: #f0f4f8; border-left: 4px solid #4a6fa5;
     border-radius: 0 4px 4px 0;
   }
-
-  h3 {
-    font-size: 17px; color: #2c3e50; margin: 28px 0 12px;
-  }
-
+  h3 { font-size: 17px; color: #2c3e50; margin: 28px 0 12px; }
   .section {
     background: #ffffff; border: 1px solid #dce0e6; border-radius: 8px;
     padding: 24px; margin-bottom: 24px;
   }
   .mermaid { background: #ffffff; text-align: center; padding: 20px 0; }
-
   p { margin-bottom: 12px; }
   .lead { font-size: 16px; color: #333; margin-bottom: 20px; }
-
-  /* Entity cards */
   .entities {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
     gap: 20px;
@@ -85,8 +76,7 @@ mermaid.initialize({
   .entity td:first-child { color: #555; width: 45%; }
   .entity td:last-child { color: #333; }
   .auto { color: #27ae60; font-weight: 600; font-size: 12px; }
-
-  /* Simple tables */
+  .new { color: #c0392b; font-weight: 600; font-size: 12px; }
   .simple-table { width: 100%; border-collapse: collapse; font-size: 14px; }
   .simple-table th {
     background: #f0f4f8; color: #2c3e50; padding: 10px 14px;
@@ -94,8 +84,6 @@ mermaid.initialize({
   }
   .simple-table td { padding: 8px 14px; border-bottom: 1px solid #e8e8e8; vertical-align: top; }
   .simple-table tr:hover td { background: #f8f9fa; }
-
-  /* Flow steps */
   .flow-step {
     background: #ffffff; border: 1px solid #dce0e6; border-radius: 8px;
     padding: 16px 20px; margin-bottom: 12px; display: flex; gap: 16px; align-items: flex-start;
@@ -117,12 +105,10 @@ mermaid.initialize({
   .role-italy { background: #e8f0fe; color: #1a5276; }
   .role-bishkek { background: #e8f8f0; color: #1e8449; }
   .role-finance { background: #fef9e7; color: #9a7d0a; }
-
   .note {
     background: #f8f9fa; border-left: 4px solid #4a6fa5; padding: 14px 18px;
     margin: 16px 0; border-radius: 0 4px 4px 0; font-size: 14px; color: #555;
   }
-
   .calc-example {
     background: #f0f4f8; border-radius: 8px; padding: 20px 24px; margin: 16px 0;
     font-family: 'SF Mono', 'Fira Code', monospace; font-size: 14px; color: #2c3e50;
@@ -131,13 +117,35 @@ mermaid.initialize({
   .calc-example .label { color: #666; }
   .calc-example .result { color: #c0392b; font-weight: bold; }
   .calc-example .auto-tag { color: #27ae60; font-size: 12px; }
+  .changes {
+    background: #fef9e7; border: 1px solid #f0e0a0; border-radius: 8px;
+    padding: 20px 24px; margin: 16px 0;
+  }
+  .changes h3 { margin-top: 0; color: #9a7d0a; }
+  .changes ul { margin-left: 20px; }
+  .changes li { margin-bottom: 6px; }
+  .changes .new-tag { background: #c0392b; color: #fff; padding: 1px 6px; border-radius: 3px; font-size: 11px; font-weight: bold; }
 </style>
 </head>
 <body>
 <div class="container">
 
 <h1>Cargo CRM — Описание системы</h1>
-<p class="subtitle">Учёт грузов Италия → Бишкек (авиа, 2 рейса/неделю)</p>
+<p class="subtitle">Учёт грузов Италия → Бишкек (авиа, 2 рейса/неделю) • пересылка по КР и в ТД/КЗ</p>
+
+<!-- ===== Изменения ===== -->
+<div class="changes">
+  <h3>Что изменилось после ответов клиента</h3>
+  <ul>
+    <li><span class="new-tag">NEW</span> <b>Две кассы</b> — Италия и Бишкек. Каждый платёж привязан к кассе</li>
+    <li><span class="new-tag">NEW</span> <b>Фото</b> — добавлено для вещей при пересылке в другие страны (ТД, КЗ, по областям)</li>
+    <li><span class="new-tag">NEW</span> <b>Назначение груза</b> — не только Бишкек, но и пересылка дальше (Таджикистан, Казахстан, области)</li>
+    <li><span class="new-tag">NEW</span> <b>Минимальный вес</b> — 1 кг. Формула: chargeable = max(1, max(actual, volume))</li>
+    <li><span class="new-tag">NEW</span> <b>Курс евро</b> — вручную. Для отчётов в сомах</li>
+    <li>Возвратов нет — не добавляем</li>
+    <li>Оплата по частям и полная — уже заложено</li>
+  </ul>
+</div>
 
 <!-- ===== 1. Структура ===== -->
 <h2>1. Из чего состоит система</h2>
@@ -156,11 +164,12 @@ flowchart LR
     H -.-> D
     H -.-> F
     H -.-> G
+    D -.-> I["🏦 Касса IT / Касса KG"]
 </div>
 
   <p style="margin-top: 16px;">Каждая стрелка — это связь. Например:
   <b>Отправка</b> принадлежит <b>Клиенту</b>, содержит <b>Вещи</b>,
-  оплачивается <b>Платежами</b>, входит в <b>Рейс</b> и заканчивается
+  оплачивается <b>Платежами</b> (через кассу), входит в <b>Рейс</b> и заканчивается
   <b>Выдачей</b>.</p>
 </div>
 
@@ -192,10 +201,11 @@ flowchart LR
     <tr><td>Рейс</td><td>→ выбор (пусто = ещё на складе)</td></tr>
     <tr><td>Кто принял</td><td>→ менеджер Италии</td></tr>
     <tr><td>Дата приёма</td><td>15.06.2026</td></tr>
+    <tr><td><span class="new">NEW</span> Назначение</td><td>Бишкек / Таджикистан / Казахстан / по областям</td></tr>
     <tr><td>Размеры коробки</td><td>Д×Ш×В в см (напр. 50×40×25)</td></tr>
     <tr><td><span class="auto">считается</span> Объёмный вес</td><td>Д×Ш×В / 6000</td></tr>
     <tr><td><span class="auto">считается</span> Фактический вес</td><td>сумма весов всех вещей</td></tr>
-    <tr><td><span class="auto">считается</span> Тарифицируемый вес</td><td>большее из (факт, объём)</td></tr>
+    <tr><td><span class="auto">считается</span> Тарифицируемый вес</td><td>max(1, max(факт, объём)) — <span class="new">минимум 1 кг</span></td></tr>
     <tr><td>Цена за кг</td><td>14.00 €</td></tr>
     <tr><td><span class="auto">считается</span> Стоимость</td><td>вес × цена за кг</td></tr>
     <tr><td>Статус</td><td>см. жизненный цикл ниже</td></tr>
@@ -213,6 +223,7 @@ flowchart LR
     <tr><td>Название</td><td>"Куртка кожаная"</td></tr>
     <tr><td>Вес, кг</td><td>2.4</td></tr>
     <tr><td>Готовность</td><td>на складе / готово / в пути / прибыло</td></tr>
+    <tr><td><span class="new">NEW</span> Фото</td><td>опционально — для пересылки в другие страны</td></tr>
   </table>
 </div>
 
@@ -225,6 +236,7 @@ flowchart LR
     <tr><td>Дата</td><td>15.06.2026</td></tr>
     <tr><td>Способ</td><td>наличные / карта / перевод</td></tr>
     <tr><td>Тип</td><td>предоплата / финальный</td></tr>
+    <tr><td><span class="new">NEW</span> Касса</td><td>🇮🇹 Италия / 🇰🇬 Бишкек</td></tr>
     <tr><td>Кто записал</td><td>→ сотрудник</td></tr>
   </table>
 </div>
@@ -245,13 +257,14 @@ flowchart LR
 
 <div class="entity">
   <div class="entity-header"><span>📤 Выдачи</span></div>
-  <div class="entity-desc">Факт выдачи груза клиенту в Бишкеке</div>
+  <div class="entity-desc">Факт выдачи груза клиенту в Бишкеке или пересылки дальше</div>
   <table>
     <tr><td>Отправка</td><td>→ какую отправку выдаём</td></tr>
     <tr><td>Кто выдал</td><td>→ менеджер Бишкека</td></tr>
     <tr><td>Дата выдачи</td><td>25.06.2026</td></tr>
     <tr><td>Кто забрал</td><td>ФИО получателя</td></tr>
     <tr><td>Документ</td><td>паспорт / ID получателя</td></tr>
+    <tr><td><span class="new">NEW</span> Тип</td><td>выдано клиенту / переслано дальше (ТД, КЗ, область)</td></tr>
     <tr><td>Заметки</td><td>доп. информация</td></tr>
   </table>
 </div>
@@ -290,21 +303,24 @@ stateDiagram-v2
     [*] --> Принято_на_складе: Менеджер Италии создаёт отправку\n+ добавляет вещи
     Принято_на_складе --> Готово_к_отправке: Все вещи отмечены готовыми
     Готово_к_отправке --> Добавлено_в_рейс: Отправка привязана к рейсу
-    Добавлено_в_рейсе --> В_пути: Рейс вылетел
+    Добавлено_в_рейс --> В_пути: Рейс вылетел
     В_пути --> Прибыло_в_Бишкек: Рейс прибыл
-    Прибыло_в_Бишкек --> Частично_оплачено: Была предоплата
-    Прибыло_в_Бишкек --> Полностью_оплачено: Полная оплата
-    Частично_оплачено --> Полностью_оплачено: Доплата при выдаче
-    Полностью_оплачено --> Выдано: Клиент забрал груз
-    Прибыло_в_Бишкек --> Выдано_в_долг: Выдано без оплаты (только владелец)
-    Выдано_в_долг --> Выдано: Владелец подтвердил
-    Выдано --> [*]
+    Прибыло_в_Бишкек --> Выдано_клиенту: Клиент забрал в Бишкеке
+    Прибыло_в_Бишкек --> Пересылка_дальше: Пересылка в ТД/КЗ/область\n(фотографируем груз)
+    Пересылка_дальше --> Выдано_клиенту: Доставлено в пункт назначения
+    Выдано_клиенту --> [*]
 </div>
 
   <div class="note">
     <b>Важно:</b> груз нельзя выдать, если он не оплачен. Исключение —
     если владелец лично подтвердит выдачу в долг. Тогда долг фиксируется
     в системе и виден на дашборде.
+  </div>
+
+  <div class="note">
+    <b>Пересылка дальше:</b> если клиент забирает груз не в Бишкеке, а
+    просит переслать в Таджикистан, Казахстан или по областям КР —
+    груз фотографируется перед отправкой. Это нужно для претензий.
   </div>
 </div>
 
@@ -324,7 +340,7 @@ stateDiagram-v2
   <div class="flow-num">2</div>
   <div class="flow-content">
     <div class="flow-title">Приём груза <span class="flow-role role-italy">Менеджер Италии</span></div>
-    <div class="flow-desc">Создаёт отправку: номер (IT-NNNNN), выбирает клиента, указывает цену за кг (14€), вводит размеры коробки</div>
+    <div class="flow-desc">Создаёт отправку: номер (IT-NNNNN), выбирает клиента, указывает цену за кг (14€), вводит размеры коробки, <span class="new">указывает назначение (Бишкек / ТД / КЗ / область)</span></div>
     <div class="flow-result">Статус: принято на складе. Оплата: не оплачено</div>
   </div>
 </div>
@@ -333,7 +349,7 @@ stateDiagram-v2
   <div class="flow-num">3</div>
   <div class="flow-content">
     <div class="flow-title">Добавление вещей <span class="flow-role role-italy">Менеджер Италии</span></div>
-    <div class="flow-desc">Добавляет каждую вещь отдельно: "Куртка кожаная" 2.4 кг, "Обувь Nike" 1.8 кг, "Косметика" 0.5 кг</div>
+    <div class="flow-desc">Добавляет каждую вещь отдельно: "Куртка кожаная" 2.4 кг, "Обувь Nike" 1.8 кг, "Косметика" 0.5 кг. <span class="new">При необходимости — фотографирует (для пересылки в другие страны)</span></div>
     <div class="flow-result">Система сама считает: общий вес = 4.7 кг</div>
   </div>
 </div>
@@ -342,7 +358,7 @@ stateDiagram-v2
   <div class="flow-num">4</div>
   <div class="flow-content">
     <div class="flow-title">Расчёт стоимости — автоматически</div>
-    <div class="flow-desc">Размеры коробки 50×40×25 см → объёмный вес = 50000/6000 = 8.33 кг. Тарифицируемый = max(4.7, 8.33) = 8.33 кг</div>
+    <div class="flow-desc">Размеры коробки 50×40×25 см → объёмный вес = 50000/6000 = 8.33 кг. Тарифицируемый = max(1, max(4.7, 8.33)) = 8.33 кг. <span class="new">Минимум 1 кг — даже если груз легче</span></div>
     <div class="flow-result">Стоимость = 8.33 × 14 = €116.62</div>
   </div>
 </div>
@@ -351,7 +367,7 @@ stateDiagram-v2
   <div class="flow-num">5</div>
   <div class="flow-content">
     <div class="flow-title">Предоплата (если была) <span class="flow-role role-italy">Менеджер Италии</span> <span class="flow-role role-finance">Финансы</span></div>
-    <div class="flow-desc">Записывает платёж: 50€, перевод, предоплата</div>
+    <div class="flow-desc">Записывает платёж: 50€, перевод, предоплата, <span class="new">касса: Италия</span></div>
     <div class="flow-result">Оплата: частично. Оплачено = 50€, долг = 66.62€</div>
   </div>
 </div>
@@ -395,7 +411,7 @@ stateDiagram-v2
   <div class="flow-num">10</div>
   <div class="flow-content">
     <div class="flow-title">Финальная оплата <span class="flow-role role-bishkek">Менеджер Бишкек</span> <span class="flow-role role-finance">Финансы</span></div>
-    <div class="flow-desc">Записывает платёж: остаток суммы, наличные, финальный</div>
+    <div class="flow-desc">Записывает платёж: остаток суммы, наличные, финальный, <span class="new">касса: Бишкек</span></div>
     <div class="flow-result">Оплата: полностью. Долг = 0</div>
   </div>
 </div>
@@ -404,7 +420,7 @@ stateDiagram-v2
   <div class="flow-num">11</div>
   <div class="flow-content">
     <div class="flow-title">Выдача груза <span class="flow-role role-bishkek">Менеджер Бишкек</span></div>
-    <div class="flow-desc">Записывает: кто забрал, паспорт/ID, дата. Груз выдан</div>
+    <div class="flow-desc">Записывает: кто забрал, паспорт/ID, дата. <span class="new">Если назначение ≠ Бишкек — груз фотографируется и пересылается дальше (ТД, КЗ, область)</span></div>
     <div class="flow-result">Статус: выдано. Если без оплаты — только владелец может подтвердить</div>
   </div>
 </div>
@@ -427,15 +443,16 @@ stateDiagram-v2
     <br>
     <span class="label">Фактический вес</span> = 2.4 + 1.8 + 0.5 = <span class="result">4.7 кг</span> <span class="auto-tag">(считается сам)</span><br>
     <span class="label">Объёмный вес</span> = 50×40×25 / 6000 = <span class="result">8.33 кг</span> <span class="auto-tag">(считается сам)</span><br>
-    <span class="label">Тарифицируемый вес</span> = max(4.7, 8.33) = <span class="result">8.33 кг</span> <span class="auto-tag">(считается сам)</span><br>
+    <span class="label">Минимальный вес</span> = <span class="result">1 кг</span> <span class="auto-tag">(правило)</span><br>
+    <span class="label">Тарифицируемый вес</span> = max(1, max(4.7, 8.33)) = <span class="result">8.33 кг</span> <span class="auto-tag">(считается сам)</span><br>
     <br>
     <span class="label">Стоимость</span> = 8.33 × 14.00 = <span class="result">€116.62</span> <span class="auto-tag">(считается сам)</span><br>
     <br>
-    <span class="label">Предоплата (перевод):</span> 50.00 €<br>
+    <span class="label">Предоплата (перевод, касса Италия):</span> 50.00 €<br>
     <span class="label">Оплачено</span> = <span class="result">50.00 €</span> <span class="auto-tag">(считается сам)</span><br>
     <span class="label">Долг</span> = 116.62 − 50.00 = <span class="result">€66.62</span> <span class="auto-tag">(считается сам)</span><br>
     <br>
-    <span class="label">Прибытие в Бишкек. Доплата (наличные):</span> 66.62 €<br>
+    <span class="label">Прибытие в Бишкек. Доплата (наличные, касса Бишкек):</span> 66.62 €<br>
     <span class="label">Оплачено</span> = 50.00 + 66.62 = <span class="result">€116.62</span> <span class="auto-tag">(считается сам)</span><br>
     <span class="label">Долг</span> = 116.62 − 116.62 = <span class="result">€0.00</span> <span class="auto-tag">(считается сам)</span><br>
     <span class="label">Выдача →</span> груз закрыт
@@ -445,6 +462,11 @@ stateDiagram-v2
     <b>Почему берём большее из весов?</b> Авиакомпания тарифицирует по месту,
     которое груз занимает. Подушка весит 1 кг, но занимает 60×40×40 см
     = 16 кг объёмного веса. Клиент платит за 16 кг, не за 1 кг.
+  </div>
+
+  <div class="note">
+    <b>Минимальный вес — 1 кг.</b> Даже если клиент отправляет конверт
+    весом 200 г, он платит как за 1 кг.
   </div>
 </div>
 
@@ -469,7 +491,7 @@ flowchart TB
         HO["Выдача\n— кто забрал, паспорт"]
         PAY["Платежи\n— предоплата, финал"]
         EXP["Расходы\n— записать затраты"]
-        REP["Отчёты\n— прибыль, долги"]
+        REP["Отчёты\n— прибыль, долги, касса"]
     end
 
     OWNER --> DASH & CLI & NEW & WH & FL & HO & PAY & EXP & REP
@@ -497,6 +519,8 @@ flowchart TB
   <tr><td>Расходы за месяц</td><td>Все затраты за месяц</td><td>сумма по таблице расходов</td></tr>
   <tr><td>Грузов на складе Италии</td><td>Принято, но не отправлено</td><td>статус "принято" или "готово"</td></tr>
   <tr><td>Выдано за месяц</td><td>Сколько грузов отдали клиентам</td><td>записи в таблице выдач</td></tr>
+  <tr><td><span class="new">NEW</span> Баланс касса Италия</td><td>Сколько денег в итальянской кассе</td><td>сумма платежей где касса = Италия</td></tr>
+  <tr><td><span class="new">NEW</span> Баланс касса Бишкек</td><td>Сколько денег в бишкекской кассе</td><td>сумма платежей где касса = Бишкек</td></tr>
 </table>
 </div>
 
@@ -504,7 +528,10 @@ flowchart TB
 <h2>8. Как сходится касса</h2>
 <div class="section">
   <div class="calc-example">
-    <span class="label">ДОХОДЫ (за месяц)</span> = сумма всех платежей = <span class="result">€4,500</span><br>
+    <span class="label">КАССА ИТАЛИЯ (за месяц)</span> = сумма платежей в кассе IT = <span class="result">€1,200</span><br>
+    <span class="label">КАССА БИШКЕК (за месяц)</span> = сумма платежей в кассе KG = <span class="result">€3,300</span><br>
+    <br>
+    <span class="label">ОБЩИЙ ДОХОД</span> = 1,200 + 3,300 = <span class="result">€4,500</span><br>
     <span class="label">РАСХОДЫ (за месяц)</span> = сумма всех расходов = <span class="result">€2,100</span><br>
     <br>
     <span class="label">ПРИБЫЛЬ</span> = 4,500 − 2,100 = <span class="result">€2,400</span><br>
@@ -512,6 +539,7 @@ flowchart TB
     <span class="label">ПРОВЕРКА:</span><br>
     • Должны клиенты = €0 (все оплатили) ✓<br>
     • Грузов не выдано = 0 (все забрали) ✓<br>
+    • Касса IT + Касса KG = доход ✓<br>
     • Касса сошлась ✓
   </div>
 
@@ -535,6 +563,13 @@ flowchart TB
     <b>Расходы бывают двух типов:</b><br>
     1. <b>К рейсу</b> — фрахт самолёта, топливный сбор, таможня. Привязаны к конкретному рейсу.<br>
     2. <b>Общие</b> — зарплата, аренда склада. Не привязаны к рейсу. Учитываются в общей прибыли за месяц.
+  </div>
+
+  <div class="note">
+    <b>Две кассы:</b> каждый платёж привязан к кассе — 🇮🇹 Италия или 🇰🇬 Бишкек.
+    Предоплата уходит в кассу Италии, финальный платёж — в кассу Бишкека.
+    На дашборде виден баланс каждой кассы отдельно.
+    Переводов между кассами нет (пока).
   </div>
 </div>
 
