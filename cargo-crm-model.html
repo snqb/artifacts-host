@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cargo CRM — Описание системы</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'base',
+  themeVariables: {
+    primaryColor: '#f0f4f8',
+    primaryTextColor: '#1a1a2e',
+    primaryBorderColor: '#4a6fa5',
+    lineColor: '#4a6fa5',
+    secondaryColor: '#e8edf3',
+    tertiaryColor: '#f8f9fa',
+    background: '#ffffff',
+    mainBkg: '#f0f4f8',
+    secondBkg: '#e8edf3',
+    textColor: '#1a1a2e',
+    fontSize: '15px',
+    fontFamily: 'system-ui, -apple-system, sans-serif',
+  },
+  er: { useMaxWidth: false },
+  flowchart: { useMaxWidth: false, htmlLabels: true },
+  state: { useMaxWidth: false },
+});
+</script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #ffffff;
+    color: #1a1a2e;
+    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    padding: 40px 20px;
+    line-height: 1.7;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+
+  h1 {
+    font-size: 30px; color: #2c3e50; margin-bottom: 8px;
+    border-bottom: 2px solid #e0e0e0; padding-bottom: 16px;
+  }
+  .subtitle { color: #666; font-size: 15px; margin-bottom: 40px; }
+
+  h2 {
+    font-size: 22px; color: #2c3e50; margin: 48px 0 20px;
+    padding: 12px 16px; background: #f0f4f8; border-left: 4px solid #4a6fa5;
+    border-radius: 0 4px 4px 0;
+  }
+
+  h3 {
+    font-size: 17px; color: #2c3e50; margin: 28px 0 12px;
+  }
+
+  .section {
+    background: #ffffff; border: 1px solid #dce0e6; border-radius: 8px;
+    padding: 24px; margin-bottom: 24px;
+  }
+  .mermaid { background: #ffffff; text-align: center; padding: 20px 0; }
+
+  p { margin-bottom: 12px; }
+  .lead { font-size: 16px; color: #333; margin-bottom: 20px; }
+
+  /* Entity cards */
+  .entities {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+    gap: 20px;
+  }
+  .entity {
+    background: #ffffff; border: 1px solid #dce0e6; border-radius: 8px;
+    overflow: hidden;
+  }
+  .entity-header {
+    padding: 14px 16px; background: #f0f4f8; font-weight: 600;
+    color: #2c3e50; font-size: 16px; border-bottom: 2px solid #4a6fa5;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .entity-header .icon { font-size: 20px; }
+  .entity-desc { padding: 10px 16px; color: #666; font-size: 13px; font-style: italic; }
+  .entity table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .entity td { padding: 7px 12px; border-bottom: 1px solid #f0f0f0; }
+  .entity td:first-child { color: #555; width: 45%; }
+  .entity td:last-child { color: #333; }
+  .auto { color: #27ae60; font-weight: 600; font-size: 12px; }
+
+  /* Simple tables */
+  .simple-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .simple-table th {
+    background: #f0f4f8; color: #2c3e50; padding: 10px 14px;
+    text-align: left; border-bottom: 2px solid #4a6fa5; font-weight: 600;
+  }
+  .simple-table td { padding: 8px 14px; border-bottom: 1px solid #e8e8e8; vertical-align: top; }
+  .simple-table tr:hover td { background: #f8f9fa; }
+
+  /* Flow steps */
+  .flow-step {
+    background: #ffffff; border: 1px solid #dce0e6; border-radius: 8px;
+    padding: 16px 20px; margin-bottom: 12px; display: flex; gap: 16px; align-items: flex-start;
+  }
+  .flow-num {
+    background: #4a6fa5; color: #fff; border-radius: 50%; width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center; font-weight: bold;
+    flex-shrink: 0; font-size: 15px;
+  }
+  .flow-content { flex: 1; }
+  .flow-title { color: #2c3e50; font-weight: 600; margin-bottom: 4px; font-size: 15px; }
+  .flow-desc { color: #666; font-size: 14px; }
+  .flow-result { color: #27ae60; font-size: 13px; margin-top: 6px; }
+  .flow-role {
+    display: inline-block; padding: 2px 10px; border-radius: 12px;
+    font-size: 12px; margin-left: 8px; font-weight: 500;
+  }
+  .role-owner { background: #fdeaea; color: #c0392b; }
+  .role-italy { background: #e8f0fe; color: #1a5276; }
+  .role-bishkek { background: #e8f8f0; color: #1e8449; }
+  .role-finance { background: #fef9e7; color: #9a7d0a; }
+
+  .note {
+    background: #f8f9fa; border-left: 4px solid #4a6fa5; padding: 14px 18px;
+    margin: 16px 0; border-radius: 0 4px 4px 0; font-size: 14px; color: #555;
+  }
+
+  .calc-example {
+    background: #f0f4f8; border-radius: 8px; padding: 20px 24px; margin: 16px 0;
+    font-family: 'SF Mono', 'Fira Code', monospace; font-size: 14px; color: #2c3e50;
+    line-height: 1.8;
+  }
+  .calc-example .label { color: #666; }
+  .calc-example .result { color: #c0392b; font-weight: bold; }
+  .calc-example .auto-tag { color: #27ae60; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Cargo CRM — Описание системы</h1>
+<p class="subtitle">Учёт грузов Италия → Бишкек (авиа, 2 рейса/неделю)</p>
+
+<!-- ===== 1. Структура ===== -->
+<h2>1. Из чего состоит система</h2>
+<div class="section">
+  <p>В системе 8 разделов (таблиц). Каждый раздел хранит свою информацию:</p>
+
+<div class="mermaid">
+flowchart LR
+    A["👤 Клиенты"] --> B["📦 Отправки"]
+    B --> C["👔 Вещи в отправке"]
+    B --> D["💰 Платежи"]
+    B --> E["🛫 Рейсы"]
+    B --> F["📤 Выдачи"]
+    E --> G["📊 Расходы"]
+    H["🔑 Сотрудники"] -.-> B
+    H -.-> D
+    H -.-> F
+    H -.-> G
+</div>
+
+  <p style="margin-top: 16px;">Каждая стрелка — это связь. Например:
+  <b>Отправка</b> принадлежит <b>Клиенту</b>, содержит <b>Вещи</b>,
+  оплачивается <b>Платежами</b>, входит в <b>Рейс</b> и заканчивается
+  <b>Выдачей</b>.</p>
+</div>
+
+<!-- ===== 2. Разделы (таблицы) ===== -->
+<h2>2. Разделы системы — что где хранится</h2>
+<div class="section">
+<div class="entities">
+
+<div class="entity">
+  <div class="entity-header"><span>👤 Клиенты</span></div>
+  <div class="entity-desc">Люди, которые отправляют грузы</div>
+  <table>
+    <tr><td>ФИО</td><td>Айбек Усенов</td></tr>
+    <tr><td>Телефон</td><td>+996 555 123456</td></tr>
+    <tr><td>WhatsApp</td><td>может отличаться от телефона</td></tr>
+    <tr><td>Страна</td><td>Италия</td></tr>
+    <tr><td>Заметки</td><td>постоянный клиент, скидка</td></tr>
+    <tr><td><span class="auto">считается</span> Долг</td><td>сумма долгов по всем отправкам</td></tr>
+  </table>
+</div>
+
+<div class="entity">
+  <div class="entity-header"><span>📦 Отправки</span></div>
+  <div class="entity-desc">Один визит клиента = одна отправка</div>
+  <table>
+    <tr><td>Номер (трекинг)</td><td>IT-00125 (внутренний)</td></tr>
+    <tr><td>AWB</td><td>накладная авиакомпании (если есть)</td></tr>
+    <tr><td>Клиент</td><td>→ выбор из базы</td></tr>
+    <tr><td>Рейс</td><td>→ выбор (пусто = ещё на складе)</td></tr>
+    <tr><td>Кто принял</td><td>→ менеджер Италии</td></tr>
+    <tr><td>Дата приёма</td><td>15.06.2026</td></tr>
+    <tr><td>Размеры коробки</td><td>Д×Ш×В в см (напр. 50×40×25)</td></tr>
+    <tr><td><span class="auto">считается</span> Объёмный вес</td><td>Д×Ш×В / 6000</td></tr>
+    <tr><td><span class="auto">считается</span> Фактический вес</td><td>сумма весов всех вещей</td></tr>
+    <tr><td><span class="auto">считается</span> Тарифицируемый вес</td><td>большее из (факт, объём)</td></tr>
+    <tr><td>Цена за кг</td><td>14.00 €</td></tr>
+    <tr><td><span class="auto">считается</span> Стоимость</td><td>вес × цена за кг</td></tr>
+    <tr><td>Статус</td><td>см. жизненный цикл ниже</td></tr>
+    <tr><td>Где лежит</td><td>текст: "Полка А-3"</td></tr>
+    <tr><td><span class="auto">считается</span> Оплачено</td><td>сумма всех платежей</td></tr>
+    <tr><td><span class="auto">считается</span> Долг</td><td>стоимость − оплачено</td></tr>
+  </table>
+</div>
+
+<div class="entity">
+  <div class="entity-header"><span>👔 Вещи в отправке</span></div>
+  <div class="entity-desc">Что именно клиент отправляет. Каждая вещь — отдельно</div>
+  <table>
+    <tr><td>Отправка</td><td>→ к какой отправке относится</td></tr>
+    <tr><td>Название</td><td>"Куртка кожаная"</td></tr>
+    <tr><td>Вес, кг</td><td>2.4</td></tr>
+    <tr><td>Готовность</td><td>на складе / готово / в пути / прибыло</td></tr>
+  </table>
+</div>
+
+<div class="entity">
+  <div class="entity-header"><span>💰 Платежи</span></div>
+  <div class="entity-desc">Любой платёж по отправке. Может быть несколько</div>
+  <table>
+    <tr><td>Отправка</td><td>→ к какой отправке</td></tr>
+    <tr><td>Сумма</td><td>50.00 €</td></tr>
+    <tr><td>Дата</td><td>15.06.2026</td></tr>
+    <tr><td>Способ</td><td>наличные / карта / перевод</td></tr>
+    <tr><td>Тип</td><td>предоплата / финальный</td></tr>
+    <tr><td>Кто записал</td><td>→ сотрудник</td></tr>
+  </table>
+</div>
+
+<div class="entity">
+  <div class="entity-header"><span>🛫 Рейсы</span></div>
+  <div class="entity-desc">Авиарейс Италия → Бишкек. 2 раза в неделю</div>
+  <table>
+    <tr><td>Номер AWB</td><td>125-98765432</td></tr>
+    <tr><td>Авиакомпания</td><td>Turkish Cargo / агент</td></tr>
+    <tr><td>Дата вылета</td><td>18.06.2026</td></tr>
+    <tr><td>Дата прилёта</td><td>заполняется в Бишкеке</td></tr>
+    <tr><td>Статус</td><td>запланирован / вылетел / прибыл</td></tr>
+    <tr><td><span class="auto">считается</span> Общий вес</td><td>сумма весов всех грузов</td></tr>
+    <tr><td><span class="auto">считается</span> Кол-во грузов</td><td>сколько отправок в рейсе</td></tr>
+  </table>
+</div>
+
+<div class="entity">
+  <div class="entity-header"><span>📤 Выдачи</span></div>
+  <div class="entity-desc">Факт выдачи груза клиенту в Бишкеке</div>
+  <table>
+    <tr><td>Отправка</td><td>→ какую отправку выдаём</td></tr>
+    <tr><td>Кто выдал</td><td>→ менеджер Бишкека</td></tr>
+    <tr><td>Дата выдачи</td><td>25.06.2026</td></tr>
+    <tr><td>Кто забрал</td><td>ФИО получателя</td></tr>
+    <tr><td>Документ</td><td>паспорт / ID получателя</td></tr>
+    <tr><td>Заметки</td><td>доп. информация</td></tr>
+  </table>
+</div>
+
+<div class="entity">
+  <div class="entity-header"><span>📊 Расходы</span></div>
+  <div class="entity-desc">Затраты. Привязаны к рейсу или общие (зарплата, аренда)</div>
+  <table>
+    <tr><td>Рейс</td><td>→ к какому рейсу (или пусто = общий)</td></tr>
+    <tr><td>Категория</td><td>транспорт, топливо, зарплата, склад, документы, таможня, другое</td></tr>
+    <tr><td>Сумма</td><td>180.00 €</td></tr>
+    <tr><td>Дата</td><td>18.06.2026</td></tr>
+    <tr><td>Описание</td><td>"Топливный сбор Turkish Cargo"</td></tr>
+    <tr><td>Кто записал</td><td>→ сотрудник</td></tr>
+  </table>
+</div>
+
+<div class="entity">
+  <div class="entity-header"><span>🔑 Сотрудники</span></div>
+  <div class="entity-desc">4 роли: владелец, Италия, Бишкек, финансы</div>
+  <table>
+    <tr><td>Имя</td><td>Айбек</td></tr>
+    <tr><td>Email</td><td>для входа в систему</td></tr>
+    <tr><td>Роль</td><td>владелец / Италия / Бишкек / финансы</td></tr>
+  </table>
+</div>
+
+</div>
+</div>
+
+<!-- ===== 3. Жизненный цикл ===== -->
+<h2>3. Как груз проходит от приёма до выдачи</h2>
+<div class="section">
+<div class="mermaid">
+stateDiagram-v2
+    [*] --> Принято_на_складе: Менеджер Италии создаёт отправку\n+ добавляет вещи
+    Принято_на_складе --> Готово_к_отправке: Все вещи отмечены готовыми
+    Готово_к_отправке --> Добавлено_в_рейс: Отправка привязана к рейсу
+    Добавлено_в_рейсе --> В_пути: Рейс вылетел
+    В_пути --> Прибыло_в_Бишкек: Рейс прибыл
+    Прибыло_в_Бишкек --> Частично_оплачено: Была предоплата
+    Прибыло_в_Бишкек --> Полностью_оплачено: Полная оплата
+    Частично_оплачено --> Полностью_оплачено: Доплата при выдаче
+    Полностью_оплачено --> Выдано: Клиент забрал груз
+    Прибыло_в_Бишкек --> Выдано_в_долг: Выдано без оплаты (только владелец)
+    Выдано_в_долг --> Выдано: Владелец подтвердил
+    Выдано --> [*]
+</div>
+
+  <div class="note">
+    <b>Важно:</b> груз нельзя выдать, если он не оплачен. Исключение —
+    если владелец лично подтвердит выдачу в долг. Тогда долг фиксируется
+    в системе и виден на дашборде.
+  </div>
+</div>
+
+<!-- ===== 4. Пошаговый поток ===== -->
+<h2>4. Пошаговый процесс — что кто делает</h2>
+<div class="section">
+
+<div class="flow-step">
+  <div class="flow-num">1</div>
+  <div class="flow-content">
+    <div class="flow-title">Создание клиента <span class="flow-role role-italy">Менеджер Италии</span></div>
+    <div class="flow-desc">Если клиента нет в базе — заполняет: ФИО, телефон, WhatsApp, страна</div>
+  </div>
+</div>
+
+<div class="flow-step">
+  <div class="flow-num">2</div>
+  <div class="flow-content">
+    <div class="flow-title">Приём груза <span class="flow-role role-italy">Менеджер Италии</span></div>
+    <div class="flow-desc">Создаёт отправку: номер (IT-NNNNN), выбирает клиента, указывает цену за кг (14€), вводит размеры коробки</div>
+    <div class="flow-result">Статус: принято на складе. Оплата: не оплачено</div>
+  </div>
+</div>
+
+<div class="flow-step">
+  <div class="flow-num">3</div>
+  <div class="flow-content">
+    <div class="flow-title">Добавление вещей <span class="flow-role role-italy">Менеджер Италии</span></div>
+    <div class="flow-desc">Добавляет каждую вещь отдельно: "Куртка кожаная" 2.4 кг, "Обувь Nike" 1.8 кг, "Косметика" 0.5 кг</div>
+    <div class="flow-result">Система сама считает: общий вес = 4.7 кг</div>
+  </div>
+</div>
+
+<div class="flow-step">
+  <div class="flow-num">4</div>
+  <div class="flow-content">
+    <div class="flow-title">Расчёт стоимости — автоматически</div>
+    <div class="flow-desc">Размеры коробки 50×40×25 см → объёмный вес = 50000/6000 = 8.33 кг. Тарифицируемый = max(4.7, 8.33) = 8.33 кг</div>
+    <div class="flow-result">Стоимость = 8.33 × 14 = €116.62</div>
+  </div>
+</div>
+
+<div class="flow-step">
+  <div class="flow-num">5</div>
+  <div class="flow-content">
+    <div class="flow-title">Предоплата (если была) <span class="flow-role role-italy">Менеджер Италии</span> <span class="flow-role role-finance">Финансы</span></div>
+    <div class="flow-desc">Записывает платёж: 50€, перевод, предоплата</div>
+    <div class="flow-result">Оплата: частично. Оплачено = 50€, долг = 66.62€</div>
+  </div>
+</div>
+
+<div class="flow-step">
+  <div class="flow-num">6</div>
+  <div class="flow-content">
+    <div class="flow-title">Подготовка к отправке <span class="flow-role role-italy">Менеджер Италии</span></div>
+    <div class="flow-desc">Отмечает все вещи как "готово", указывает где лежит на складе ("Полка А-3")</div>
+    <div class="flow-result">Статус: готово к отправке (только когда все вещи готовы)</div>
+  </div>
+</div>
+
+<div class="flow-step">
+  <div class="flow-num">7</div>
+  <div class="flow-content">
+    <div class="flow-title">Создание рейса <span class="flow-role role-owner">Владелец</span> <span class="flow-role role-italy">Менеджер Италии</span></div>
+    <div class="flow-desc">Создаёт рейс: номер AWB, авиакомпания, дата вылета. Привязывает готовые отправки к рейсу</div>
+    <div class="flow-result">Отправка → в рейсе. Вещи → в пути</div>
+  </div>
+</div>
+
+<div class="flow-step">
+  <div class="flow-num">8</div>
+  <div class="flow-content">
+    <div class="flow-title">Вылет <span class="flow-role role-italy">Менеджер Италии</span> <span class="flow-role role-owner">Владелец</span></div>
+    <div class="flow-desc">Статус рейса: вылетел</div>
+  </div>
+</div>
+
+<div class="flow-step">
+  <div class="flow-num">9</div>
+  <div class="flow-content">
+    <div class="flow-title">Прибытие в Бишкек <span class="flow-role role-bishkek">Менеджер Бишкек</span></div>
+    <div class="flow-desc">Статус рейса: прибыл. Все отправки в рейсе → статус: прибыло. Вещи → прибыло</div>
+    <div class="flow-result">Грузы появляются в списке "К выдаче"</div>
+  </div>
+</div>
+
+<div class="flow-step">
+  <div class="flow-num">10</div>
+  <div class="flow-content">
+    <div class="flow-title">Финальная оплата <span class="flow-role role-bishkek">Менеджер Бишкек</span> <span class="flow-role role-finance">Финансы</span></div>
+    <div class="flow-desc">Записывает платёж: остаток суммы, наличные, финальный</div>
+    <div class="flow-result">Оплата: полностью. Долг = 0</div>
+  </div>
+</div>
+
+<div class="flow-step">
+  <div class="flow-num">11</div>
+  <div class="flow-content">
+    <div class="flow-title">Выдача груза <span class="flow-role role-bishkek">Менеджер Бишкек</span></div>
+    <div class="flow-desc">Записывает: кто забрал, паспорт/ID, дата. Груз выдан</div>
+    <div class="flow-result">Статус: выдано. Если без оплаты — только владелец может подтвердить</div>
+  </div>
+</div>
+
+</div>
+
+<!-- ===== 5. Расчёт стоимости — пример ===== -->
+<h2>5. Как считается стоимость груза — пример</h2>
+<div class="section">
+  <p>Клиент Айбек приносит на склад 3 вещи и просит отправить в Бишкек:</p>
+
+  <div class="calc-example">
+    <span class="label">Вещи (менеджер вводит вручную):</span><br>
+    • Куртка кожаная — 2.4 кг<br>
+    • Обувь Nike — 1.8 кг<br>
+    • Косметика — 0.5 кг<br>
+    <br>
+    <span class="label">Размеры коробки (менеджер вводит):</span> 50×40×25 см<br>
+    <span class="label">Цена за кг (менеджер вводит):</span> 14.00 €<br>
+    <br>
+    <span class="label">Фактический вес</span> = 2.4 + 1.8 + 0.5 = <span class="result">4.7 кг</span> <span class="auto-tag">(считается сам)</span><br>
+    <span class="label">Объёмный вес</span> = 50×40×25 / 6000 = <span class="result">8.33 кг</span> <span class="auto-tag">(считается сам)</span><br>
+    <span class="label">Тарифицируемый вес</span> = max(4.7, 8.33) = <span class="result">8.33 кг</span> <span class="auto-tag">(считается сам)</span><br>
+    <br>
+    <span class="label">Стоимость</span> = 8.33 × 14.00 = <span class="result">€116.62</span> <span class="auto-tag">(считается сам)</span><br>
+    <br>
+    <span class="label">Предоплата (перевод):</span> 50.00 €<br>
+    <span class="label">Оплачено</span> = <span class="result">50.00 €</span> <span class="auto-tag">(считается сам)</span><br>
+    <span class="label">Долг</span> = 116.62 − 50.00 = <span class="result">€66.62</span> <span class="auto-tag">(считается сам)</span><br>
+    <br>
+    <span class="label">Прибытие в Бишкек. Доплата (наличные):</span> 66.62 €<br>
+    <span class="label">Оплачено</span> = 50.00 + 66.62 = <span class="result">€116.62</span> <span class="auto-tag">(считается сам)</span><br>
+    <span class="label">Долг</span> = 116.62 − 116.62 = <span class="result">€0.00</span> <span class="auto-tag">(считается сам)</span><br>
+    <span class="label">Выдача →</span> груз закрыт
+  </div>
+
+  <div class="note">
+    <b>Почему берём большее из весов?</b> Авиакомпания тарифицирует по месту,
+    которое груз занимает. Подушка весит 1 кг, но занимает 60×40×40 см
+    = 16 кг объёмного веса. Клиент платит за 16 кг, не за 1 кг.
+  </div>
+</div>
+
+<!-- ===== 6. Роли ===== -->
+<h2>6. Кто что видит и делает</h2>
+<div class="section">
+<div class="mermaid">
+flowchart TB
+    subgraph ROLES[" "]
+        OWNER["👑 Владелец\nВидит и делает всё"]
+        M_IT["🇮🇹 Менеджер Италии\nПринимает грузы"]
+        M_KG["🇰🇬 Менеджер Бишкек\nВыдаёт грузы"]
+        FIN["💰 Финансы\nДеньги и отчёты"]
+    end
+
+    subgraph SCREENS["Что доступно"]
+        DASH["Дашборд\n— обзор всего"]
+        CLI["Клиенты\n— добавлять, смотреть"]
+        NEW["Приём груза\n— создать отправку + вещи"]
+        WH["Склад\n— готовность, где лежит"]
+        FL["Рейсы\n— создать, менять статус"]
+        HO["Выдача\n— кто забрал, паспорт"]
+        PAY["Платежи\n— предоплата, финал"]
+        EXP["Расходы\n— записать затраты"]
+        REP["Отчёты\n— прибыль, долги"]
+    end
+
+    OWNER --> DASH & CLI & NEW & WH & FL & HO & PAY & EXP & REP
+    M_IT --> NEW & WH & CLI & FL
+    M_KG --> FL & HO & PAY
+    FIN --> DASH & EXP & PAY & REP
+
+    style OWNER fill:#fdeaea,color:#c0392b,stroke:#c0392b
+    style M_IT fill:#e8f0fe,color:#1a5276,stroke:#4a6fa5
+    style M_KG fill:#e8f8f0,color:#1e8449,stroke:#27ae60
+    style FIN fill:#fef9e7,color:#9a7d0a,stroke:#d4a017
+</div>
+</div>
+
+<!-- ===== 7. Дашборд ===== -->
+<h2>7. Дашборд — что видит владелец при входе</h2>
+<div class="section">
+<table class="simple-table">
+  <tr><th>Показатель</th><th>Что значит</th><th>Откуда берётся</th></tr>
+  <tr><td>Грузов в пути</td><td>Сейчас летит или едет</td><td>отправки со статусом "в пути"</td></tr>
+  <tr><td>Прибыло в Бишкек</td><td>Ждёт выдачи</td><td>отправки со статусом "прибыло"</td></tr>
+  <tr><td>Денег получено за месяц</td><td>Все платежи за текущий месяц</td><td>сумма по таблице платежей</td></tr>
+  <tr><td>Должны клиенты</td><td>Сумма всех долгов</td><td>сумма по непогашенным отправкам</td></tr>
+  <tr><td>Прибыль за месяц</td><td>Доходы минус расходы</td><td>платежи минус расходы</td></tr>
+  <tr><td>Расходы за месяц</td><td>Все затраты за месяц</td><td>сумма по таблице расходов</td></tr>
+  <tr><td>Грузов на складе Италии</td><td>Принято, но не отправлено</td><td>статус "принято" или "готово"</td></tr>
+  <tr><td>Выдано за месяц</td><td>Сколько грузов отдали клиентам</td><td>записи в таблице выдач</td></tr>
+</table>
+</div>
+
+<!-- ===== 8. Финансовая логика ===== -->
+<h2>8. Как сходится касса</h2>
+<div class="section">
+  <div class="calc-example">
+    <span class="label">ДОХОДЫ (за месяц)</span> = сумма всех платежей = <span class="result">€4,500</span><br>
+    <span class="label">РАСХОДЫ (за месяц)</span> = сумма всех расходов = <span class="result">€2,100</span><br>
+    <br>
+    <span class="label">ПРИБЫЛЬ</span> = 4,500 − 2,100 = <span class="result">€2,400</span><br>
+    <br>
+    <span class="label">ПРОВЕРКА:</span><br>
+    • Должны клиенты = €0 (все оплатили) ✓<br>
+    • Грузов не выдано = 0 (все забрали) ✓<br>
+    • Касса сошлась ✓
+  </div>
+
+  <h3>Прибыль по конкретному рейсу</h3>
+  <div class="calc-example">
+    <span class="label">Рейс 125-98765432, 3 отправки</span><br>
+    <br>
+    <span class="label">Доход рейса</span> = сумма стоимостей 3 отправок = <span class="result">€500</span><br>
+    <span class="label">Расходы рейса</span> = фрахт + топливо + таможня = <span class="result">€180</span><br>
+    <br>
+    <span class="label">Прибыль рейса</span> = 500 − 180 = <span class="result">€320</span><br>
+    <br>
+    <span class="label">ОПЕРАЦИОННЫЕ расходы (не к рейсу):</span><br>
+    • Зарплата менеджеров = €800/мес<br>
+    • Аренда склада = €400/мес<br>
+    <br>
+    <span class="label">ОБЩАЯ прибыль</span> = прибыль всех рейсов − операционные = <span class="result">€2,400</span>
+  </div>
+
+  <div class="note">
+    <b>Расходы бывают двух типов:</b><br>
+    1. <b>К рейсу</b> — фрахт самолёта, топливный сбор, таможня. Привязаны к конкретному рейсу.<br>
+    2. <b>Общие</b> — зарплата, аренда склада. Не привязаны к рейсу. Учитываются в общей прибыли за месяц.
+  </div>
+</div>
+
+</div>
+</body>
+</html>
