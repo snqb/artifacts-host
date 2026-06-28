@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Персонализированные финансовые советы в мобильном приложении банка Компаньон</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fafafa;
+  --fg: #111;
+  --fg-muted: #555;
+  --fg-dim: #888;
+  --border: #e0e0e0;
+  --accent: #2563eb;
+  --accent-light: #eff6ff;
+  --accent-bg: #dbeafe;
+  --good: #16a34a;
+  --good-bg: #dcfce7;
+  --warn: #ca8a04;
+  --warn-bg: #fef9c3;
+  --bad: #dc2626;
+  --bad-bg: #fee2e2;
+  --card-bg: #fff;
+  --hero-bg: linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #1e40af 100%);
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
+  --shadow-lg: 0 4px 6px -1px rgba(0,0,0,0.08), 0 12px 24px rgba(0,0,0,0.06);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.6;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+/* Hero */
+.hero {
+  background: var(--hero-bg);
+  color: white;
+  padding: 64px 0 48px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -50%; right: -20%;
+  width: 600px; height: 600px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 50%;
+}
+.hero h1 {
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: 16px;
+  max-width: 800px;
+}
+.hero .subtitle {
+  font-size: 1.15rem;
+  opacity: 0.85;
+  max-width: 640px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+.hero .meta {
+  margin-top: 32px;
+  display: flex;
+  gap: 32px;
+  font-size: 0.85rem;
+  opacity: 0.7;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* Section headers */
+.section {
+  padding: 48px 0;
+  border-bottom: 1px solid var(--border);
+}
+.section:last-child { border-bottom: none; }
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.section-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-bg);
+  padding: 4px 10px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.section h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.section h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 28px 0 12px;
+  color: var(--fg);
+}
+.section h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 20px 0 8px;
+  color: var(--fg-muted);
+}
+
+/* Cards */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 16px 0;
+  box-shadow: var(--shadow);
+}
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+.card-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  margin: 16px 0;
+}
+th {
+  text-align: left;
+  padding: 10px 12px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--fg-dim);
+  border-bottom: 2px solid var(--border);
+}
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+tr:hover td { background: rgba(0,0,0,0.015); }
+
+/* Status badges */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.badge-good { background: var(--good-bg); color: var(--good); }
+.badge-warn { background: var(--warn-bg); color: var(--warn); }
+.badge-bad { background: var(--bad-bg); color: var(--bad); }
+.badge-info { background: var(--accent-light); color: var(--accent); }
+
+/* Metrics */
+.metric-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+.metric {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.metric-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--accent);
+  font-family: 'IBM Plex Mono', monospace;
+}
+.metric-label {
+  font-size: 0.82rem;
+  color: var(--fg-muted);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* Callouts */
+.callout {
+  border-left: 4px solid var(--accent);
+  background: var(--accent-light);
+  padding: 16px 20px;
+  border-radius: 0 8px 8px 0;
+  margin: 16px 0;
+  font-size: 0.95rem;
+}
+.callout-good { border-color: var(--good); background: var(--good-bg); }
+.callout-warn { border-color: var(--warn); background: var(--warn-bg); }
+.callout-bad { border-color: var(--bad); background: var(--bad-bg); }
+
+/* Code/Mono blocks */
+pre, code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85rem;
+}
+pre {
+  background: #1e1e2e;
+  color: #cdd6f4;
+  padding: 16px 20px;
+  border-radius: 10px;
+  overflow-x: auto;
+  margin: 16px 0;
+  line-height: 1.5;
+}
+
+/* Architecture diagram text */
+.arch-diagram {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  background: #1e1e2e;
+  color: #cdd6f4;
+  padding: 24px;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin: 16px 0;
+}
+
+/* Lists */
+ul, ol {
+  margin: 12px 0 12px 20px;
+}
+li { margin: 6px 0; }
+
+/* Pipeline steps */
+.pipeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 20px 0;
+}
+.pipe-step {
+  display: flex;
+  align-items: stretch;
+}
+.pipe-arrow {
+  width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-dim);
+  font-size: 1.2rem;
+}
+.pipe-box {
+  flex: 1;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.pipe-label {
+  font-weight: 600;
+  min-width: 120px;
+}
+.pipe-desc {
+  color: var(--fg-muted);
+  font-size: 0.9rem;
+}
+.pipe-pct {
+  margin-left: auto;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Case study cards */
+.case-study {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 16px 0;
+  box-shadow: var(--shadow);
+}
+.case-study-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.case-study-logo {
+  width: 40px; height: 40px;
+  border-radius: 8px;
+  background: var(--accent-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 0.85rem;
+}
+.case-study h4 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.case-study .meta {
+  font-size: 0.85rem;
+  color: var(--fg-dim);
+  margin-bottom: 12px;
+}
+
+/* Roadmap */
+.phase {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 20px 0;
+  box-shadow: var(--shadow);
+}
+.phase-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.phase-badge {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+.phase-1 .phase-badge { background: var(--good-bg); color: var(--good); }
+.phase-2 .phase-badge { background: var(--warn-bg); color: var(--warn); }
+.phase-3 .phase-badge { background: var(--accent-bg); color: var(--accent); }
+.phase h4 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+/* Footer */
+.footer {
+  padding: 40px 0;
+  text-align: center;
+  color: var(--fg-dim);
+  font-size: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .hero h1 { font-size: 1.8rem; }
+  .hero .subtitle { font-size: 1rem; }
+  .hero .meta { flex-direction: column; gap: 8px; }
+  .metric-value { font-size: 1.5rem; }
+  .card-grid, .card-grid-3 { grid-template-columns: 1fr; }
+}
+
+/* Smooth scroll */
+html { scroll-behavior: smooth; }
+
+/* TOC */
+.toc {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 24px 0;
+  position: sticky;
+  top: 16px;
+}
+.toc h4 {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--fg-dim);
+}
+.toc ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.toc li {
+  margin: 0;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.toc li:last-child { border-bottom: none; }
+.toc a {
+  color: var(--fg-muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+  display: block;
+}
+.toc a:hover { color: var(--accent); }
+
+/* Two column layout */
+.cols-2 {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 32px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .cols-2 { grid-template-columns: 1fr; }
+  .toc { position: static; }
+}
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="container">
+    <h1>Персонализированные финансовые советы в мобильном приложении банка Компаньон</h1>
+    <p class="subtitle">Ресерч по внедрению AI-driven персонализации в цифровой банкинг Кыргызстана: глобальные практики, технологический стек, регуляторика и приоритизированный роадмап</p>
+    <div class="meta">
+      <span>86 источников</span>
+      <span>·</span>
+      <span>11 запросов через Exa AI</span>
+      <span>·</span>
+      <span>Июнь 2026</span>
+    </div>
+  </div>
+</div>
+
+<!-- Summary -->
+<div class="section" style="background: #fff;">
+  <div class="container">
+    <div class="callout">
+      <strong>Резюме.</strong> Банк Компаньон имеет приложение с 1+ млн установок, но отстаёт от MBank и О!Bank (5+ млн каждый) по глубине цифрового опыта. Персонализированные финансовые советы — ключевой способ перейти от транзакционного сервиса к роли «финансового советника» в кармане клиента. Гибридный подход (rules + embeddings + ML) позволяет запустить базовую версию за 1–2 месяца с командой из 1–2 разработчиков.
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="container cols-2">
+    <!-- TOC -->
+    <nav class="toc">
+      <h4>Содержание</h4>
+      <ul>
+        <li><a href="#s1">1. Текущее состояние Компаньона</a></li>
+        <li><a href="#s2">2. Рынок цифрового банкинга в КР</a></li>
+        <li><a href="#s3">3. Глобальные практики</a></li>
+        <li><a href="#s4">4. Конкретные фичи</a></li>
+        <li><a href="#s5">5. Технологический стек</a></li>
+        <li><a href="#s6">6. Регуляторика и безопасность</a></li>
+        <li><a href="#s7">7. Монетизация</a></li>
+        <li><a href="#s8">8. Приоритизированный роадмап</a></li>
+        <li><a href="#s9">9. Выводы</a></li>
+      </ul>
+    </nav>
+
+    <!-- Main content -->
+    <div>
+      <!-- Section 1 -->
+      <div id="s1" class="section" style="padding-top: 0;">
+        <div class="section-header">
+          <span class="section-num">01</span>
+          <h2>Текущее состояние приложения Компаньон</h2>
+        </div>
+
+        <h3>Что уже есть</h3>
+        <table>
+          <tr><th>Функция</th><th>Описание</th></tr>
+          <tr><td>Переводы</td><td>Внутри страны и за рубеж (Россия, Казахстан, Узбекистан)</td></tr>
+          <tr><td>Оплата по QR</td><td>Безналичная оплата в магазинах, кафе, онлайн</td></tr>
+          <tr><td>Оплата услуг</td><td>500+ сервисов: коммуналка, интернет, связь, госуслуги</td></tr>
+          <tr><td>Депозиты</td><td>Открытие онлайн, доход до 13% годовых</td></tr>
+          <tr><td>Кредиты</td><td>Онлайн-займ до 200 000 KGS, срок до 36 мес, ставка 26.99%</td></tr>
+          <tr><td>Кешбэк</td><td>До 20% на Visa Gold</td></tr>
+          <tr><td>KWIKPAY</td><td>Приём переводов онлайн на кошелёк/карту</td></tr>
+          <tr><td>Языки</td><td>Кыргызский, русский, английский</td></tr>
+        </table>
+
+        <h3>Чего нет (по сравнению с лидерами рынка)</h3>
+        <div class="card-grid-3">
+          <div class="card">
+            <span class="badge badge-bad">PFM</span>
+            <p style="margin-top: 8px;">Анализ трат, бюджеты, категории расходов</p>
+          </div>
+          <div class="card">
+            <span class="badge badge-bad">Персонализация</span>
+            <p style="margin-top: 8px;">Next-best-action на основе поведения</p>
+          </div>
+          <div class="card">
+            <span class="badge badge-bad">Маркетплейс</span>
+            <p style="margin-top: 8px;">О!Bank имеет O!Market (125K товаров)</p>
+          </div>
+          <div class="card">
+            <span class="badge badge-bad">Подписки</span>
+            <p style="margin-top: 8px;">Управление регулярными платежами</p>
+          </div>
+          <div class="card">
+            <span class="badge badge-bad">Инвестиции</span>
+            <p style="margin-top: 8px;">Накопления и инвестиции как класс</p>
+          </div>
+        </div>
+
+        <h3>Позиция на рынке</h3>
+        <div class="metric-row">
+          <div class="metric">
+            <div class="metric-value">1M+</div>
+            <div class="metric-label">Установок на Google Play<br><span style="font-size:0.75rem;color:var(--fg-dim)">январь 2024</span></div>
+          </div>
+          <div class="metric">
+            <div class="metric-value">4.4★</div>
+            <div class="metric-label">Рейтинг в RuStore<br><span style="font-size:0.75rem;color:var(--fg-dim)">28 отзывов, май 2026</span></div>
+          </div>
+          <div class="metric">
+            <div class="metric-value">#2</div>
+            <div class="metric-label">По удобству и надёжности<br><span style="font-size:0.75rem;color:var(--fg-dim)">Kaktus.media</span></div>
+          </div>
+          <div class="metric">
+            <div class="metric-value">500+</div>
+            <div class="metric-label">Сервисов для оплаты<br><span style="font-size:0.75rem;color:var(--fg-dim)">в приложении</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2 -->
+      <div id="s2" class="section">
+        <div class="section-header">
+          <span class="section-num">02</span>
+          <h2>Рынок цифрового банкинга в Кыргызстане</h2>
+        </div>
+
+        <h3>Ключевые цифры</h3>
+        <div class="metric-row">
+          <div class="metric">
+            <div class="metric-value">24</div>
+            <div class="metric-label">Лицензированных банков<br><span style="font-size:0.75rem;color:var(--fg-dim)">март 2026</span></div>
+          </div>
+          <div class="metric">
+            <div class="metric-value">34</div>
+            <div class="metric-label">Мобильных приложений<br><span style="font-size:0.75rem;color:var(--fg-dim)">розничных + корп</span></div>
+          </div>
+          <div class="metric">
+            <div class="metric-value">15.7M</div>
+            <div class="metric-label">Клиентская база финсектора<br><span style="font-size:0.75rem;color:var(--fg-dim)">сентябрь 2024</span></div>
+          </div>
+          <div class="metric">
+            <div class="metric-value">91.4%</div>
+            <div class="metric-label">Проникновение мобильных<br><span style="font-size:0.75rem;color:var(--fg-dim)">все телефоны</span></div>
+          </div>
+          <div class="metric">
+            <div class="metric-value">85×</div>
+            <div class="metric-label">Рост безналичных<br><span style="font-size:0.75rem;color:var(--fg-dim)">ELQR за 2 года</span></div>
+          </div>
+          <div class="metric">
+            <div class="metric-value">274.9B</div>
+            <div class="metric-label">QR-платежи сомов<br><span style="font-size:0.75rem;color:var(--fg-dim)">1H 2025</span></div>
+          </div>
+        </div>
+
+        <h3>Лидеры рынка</h3>
+        <table>
+          <tr><th>Приложение</th><th>Установки</th><th>Ключевые особенности</th></tr>
+          <tr>
+            <td><strong>MBank</strong></td>
+            <td><span class="badge badge-good">5+ млн</span></td>
+            <td>«Первый цифровой банк», инвестиции в золото от 0.1г, M+ программа, криптовалюта, MIslamic</td>
+          </tr>
+          <tr>
+            <td><strong>О!Bank</strong></td>
+            <td><span class="badge badge-good">5+ млн</span></td>
+            <td>O!Market (125K товаров), O!Travel, переводы в 140+ стран, кешбэк до 20%</td>
+          </tr>
+          <tr>
+            <td><strong>Компаньон</strong></td>
+            <td><span class="badge badge-warn">1+ млн</span></td>
+            <td>Базовый мобильный банк + кошелёк, кешбэк до 20%, 500+ сервисов оплаты</td>
+          </tr>
+        </table>
+
+        <h3>Ключевые тренды</h3>
+        <div class="card-grid">
+          <div class="card">
+            <strong>QR-революция</strong>
+            <p style="margin-top: 6px; color: var(--fg-muted); font-size: 0.9rem;">Массовый переход на безналичные через стандарт ELQR. Объём вырос в 20× за год.</p>
+          </div>
+          <div class="card">
+            <strong>Неравномерность</strong>
+            <p style="margin-top: 6px; color: var(--fg-muted); font-size: 0.9rem;">Сильные разрывы город/село. В сельских районах всё ещё доминируют наличные.</p>
+          </div>
+          <div class="card">
+            <strong>Молодёжное давление</strong>
+            <p style="margin-top: 6px; color: var(--fg-muted); font-size: 0.9rem;">91.4% с телефонами, растущие требования к BNPL, микрокредитам, инвестициям.</p>
+          </div>
+          <div class="card">
+            <strong>Суперприложения</strong>
+            <p style="margin-top: 6px; color: var(--fg-muted); font-size: 0.9rem;">MBank и О!Bank становятся экосистемами: банкинг + маркетплейс + путешествия + обучение.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3 -->
+      <div id="s3" class="section">
+        <div class="section-header">
+          <span class="section-num">03</span>
+          <h2>Глобальные лучшие практики персонализации</h2>
+        </div>
+
+        <div class="callout callout-good">
+          <strong>74% потребителей</strong> требуют персонализированных цифровых путешествий. <strong>78% клиентов</strong> используют мобильный банкинг еженедельно. Рынок растёт на ~15.6% в год — к 2030 достигнет $3.47B.
+        </div>
+
+        <h3>Кейсы банков</h3>
+
+        <div class="case-study">
+          <div class="case-study-header">
+            <div class="case-study-logo">DB</div>
+            <div>
+              <h4>Discovery Bank — «Невидимый маркетинг»</h4>
+              <div class="meta">ЮАР · Azure OpenAI + Databricks</div>
+            </div>
+          </div>
+          <ul>
+            <li>Поведенческое моделирование создаёт индивидуальные финансовые профили</li>
+            <li>Next-best-action в реальном времени <strong>без запроса пользователя</strong></li>
+            <li><span class="badge badge-good">Результат: удвоение вовлечённости</span>, снижение latency на 50%</li>
+          </ul>
+        </div>
+
+        <div class="case-study">
+          <div class="case-study-header">
+            <div class="case-study-logo">ING</div>
+            <div>
+              <h4>ING — Hyper-personalized marketing</h4>
+              <div class="meta">Нидерланды · 5 стратегических доменов GenAI</div>
+            </div>
+          </div>
+          <ul>
+            <li>Гиперперсонализированный маркетинг</li>
+            <li>Улучшенные чатботы + straight-through processing</li>
+            <li>KYC/compliance, ускоренная разработка ПО, wholesale lending</li>
+            <li><strong>Фокус на scope, safety, speed</strong> для конкуренции с новыми игроками</li>
+          </ul>
+        </div>
+
+        <div class="case-study">
+          <div class="case-study-header">
+            <div class="case-study-logo">CB</div>
+            <div>
+              <h4>Commerzbank — AI-аватар Ava</h4>
+              <div class="meta">Германия · Microsoft Azure · 2025</div>
+            </div>
+          </div>
+          <ul>
+            <li>Виртуальный ассистент с человекоподобным аватаром внутри приложения</li>
+            <li>24/7 поддержка, инсайты по счетам, рекомендации продуктов</li>
+            <li>Выполнение транзакций внутри чата + hand-off к живым агентам</li>
+          </ul>
+        </div>
+
+        <div class="case-study">
+          <div class="case-study-header">
+            <div class="case-study-logo">MS</div>
+            <div>
+              <h4>Mashreq Money Insights</h4>
+              <div class="meta">ОАЭ · 1.5 млн клиентов</div>
+            </div>
+          </div>
+          <ul>
+            <li>Автоматическая категоризация транзакций (40+ категорий)</li>
+            <li>История 6 месяцев, сравнение месяц к месяцу</li>
+            <li><strong>Трекер подписок</strong> — консолидация регулярных платежей</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Section 4 -->
+      <div id="s4" class="section">
+        <div class="section-header">
+          <span class="section-num">04</span>
+          <h2>Конкретные фичи персонализированных советов</h2>
+        </div>
+
+        <h3>4.1 Анализ транзакций и категоризация</h3>
+        <p>Гибридный pipeline: правила → векторный поиск → ML → LLM fallback.</p>
+
+        <table>
+          <tr><th>Уровень</th><th>Технология</th><th>Точность</th><th>Латентность</th></tr>
+          <tr><td>1. Правила</td><td>Regex/keyword matching</td><td>Высокая для известных</td><td>Нулевая</td></tr>
+          <tr><td>2. Векторный поиск</td><td>Embeddings (OpenAI/pgvector)</td><td>~95%</td><td>~10ms</td></tr>
+          <tr><td>3. ML-модель</td><td>BERT/DeBERTa fine-tuned</td><td>~98%</td><td>~50ms</td></tr>
+          <tr><td>4. LLM fallback</td><td>GPT-4o-mini / локальная</td><td>~99%</td><td>~500ms</td></tr>
+        </table>
+
+        <div class="callout">
+          <strong>Enrichment.</strong> «POS DEBIT SQ *BLUE BOTTLE COF» → «Blue Bottle Coffee, Сан-Франциско, $4.50, Категория: Еда». Moneyhub показывает 98% точность категоризации.
+        </div>
+
+        <h3>4.2 Next-Best-Action уведомления</h3>
+        <table>
+          <tr><th>Триггер</th><th>Действие</th><th>Пример для Компаньона</th></tr>
+          <tr><td>Низкий баланс</td><td>Предложить микрозайм</td><td>«Баланс &lt; 5000 сом. Взять 20 000 на 7 дней?»</td></tr>
+          <tr><td>Регулярный платёж</td><td>Напомнить о шаблоне</td><td>«Пора платить за интернет. Оплатить из шаблона?»</td></tr>
+          <tr><td>Крупная покупка</td><td>Предложить рассрочку</td><td>«35 000 в электронике. Разбить на 3 месяца?»</td></tr>
+          <tr><td>Постоянные траты</td><td>Анализ и рекомендация</td><td>«8000/мес на такси. Попробовать O!Dostavку?»</td></tr>
+          <tr><td>Зарплата</td><td>Автонакопление</td><td>«Зачислена зарплата. Отправить 10% на депозит?»</td></tr>
+        </table>
+
+        <h3>4.3 Финансовое здоровье</h3>
+        <div class="card-grid">
+          <div class="card">
+            <strong>Динамическое бюджетирование</strong>
+            <p style="margin-top: 6px; color: var(--fg-muted); font-size: 0.9rem;">Guardrails на основе исторических трат</p>
+          </div>
+          <div class="card">
+            <strong>Cash flow прогнозирование</strong>
+            <p style="margin-top: 6px; color: var(--fg-muted); font-size: 0.9rem;">Предупреждение о предстоящих дефицитах</p>
+          </div>
+          <div class="card">
+            <strong>Автонакопление по целям</strong>
+            <p style="margin-top: 6px; color: var(--fg-muted); font-size: 0.9rem;">Round-up + регулярные переводы</p>
+          </div>
+          <div class="card">
+            <strong>Анализ кредитного здоровья</strong>
+            <p style="margin-top: 6px; color: var(--fg-muted); font-size: 0.9rem;">Debt-to-income, рекомендации по погашению</p>
+          </div>
+        </div>
+
+        <h3>4.4 Рекомендации продуктов</h3>
+        <div class="callout callout-good">
+          <strong>Бенчмарк Southeast Asia (Personetics):</strong> вовлечённость до +35%, конверсия в продажи до +17%, рост депозитов +9% YoY.
+        </div>
+
+        <h3>4.5 Интеграция инвестиций</h3>
+        <p><strong>Глобальный тренд:</strong> 56% новых счётов в 2025 открыто в финтехах; 67% Zillennials хотят «all-in-one». Revolut встроил robo-advisor с диверсификацией (акции, ETF, крипто). MBank уже делает покупку золота от 0.1г.</p>
+      </div>
+
+      <!-- Section 5 -->
+      <div id="s5" class="section">
+        <div class="section-header">
+          <span class="section-num">05</span>
+          <h2>Технологический стек</h2>
+        </div>
+
+        <h3>Архитектура personalization engine</h3>
+        <div class="arch-diagram">
+┌─────────────────────────────────────────────────────────────┐
+│                      Мобильное приложение                    │
+│  (Flutter / React Native / нативные iOS+Android)           │
+└──────────────────┬──────────────────────────────────────────┘
+                   │
+┌──────────────────▼──────────────────────────────────────────┐
+│                    API Gateway / BFF                         │
+│         (Hono TypeScript или FastAPI Python)                  │
+└──────────────────┬──────────────────────────────────────────┘
+                   │
+    ┌──────────────┼──────────────┬──────────────┐
+    │              │              │              │
+┌───▼───┐   ┌────▼────┐   ┌─────▼─────┐  ┌────▼────┐
+│ User  │   │Transaction│  │Recommendation│  │ Notification│
+│ Profile│   │  Engine  │   │   Engine     │  │  Service    │
+│ (CDP) │   │          │   │              │  │             │
+└───┬───┘   └────┬────┘   └──────┬──────┘  └─────┬───────┘
+    │            │                │               │
+┌───▼───┐   ┌────▼────┐   ┌─────▼─────┐  ┌────▼────┐
+│  PG   │   │   PG    │   │   Redis    │  │  FCM/   │
+│(users)│   │(transactions)│  │  (cache)   │  │  APNS   │
+└───────┘   └─────────┘   └───────────┘  └─────────┘
+                   │
+        ┌─────────▼──────────┐
+        │  ML/LLM Inference   │
+        │ (OpenRouter /       │
+        │  self-hosted /       │
+        │  OpenAI API)         │
+        └─────────────────────┘
+        </div>
+
+        <h3>Компоненты</h3>
+        <table>
+          <tr><th>Компонент</th><th>Рекомендация</th><th>Почему</th></tr>
+          <tr><td>Backend API</td><td>FastAPI (Python) или Hono (TS)</td><td>Простота, скорость разработки</td></tr>
+          <tr><td>CDP / User Profile</td><td>PostgreSQL + Redis</td><td>Надёжность, знакомый стек</td></tr>
+          <tr><td>Transaction Store</td><td>PostgreSQL + TimescaleDB</td><td>Для time-series анализа</td></tr>
+          <tr><td>ML Inference</td><td>OpenRouter (gpt-4o-mini) или Ollama</td><td>Дёшево, кыргызский язык</td></tr>
+          <tr><td>Embeddings</td><td>sentence-transformers all-MiniLM</td><td>384d, быстро, офлайн</td></tr>
+          <tr><td>Notifications</td><td>FCM + APNS</td><td>Стандарт для мобильных</td></tr>
+          <tr><td>Event Streaming</td><td>Kafka или PG LISTEN/NOTIFY</td><td>Real-time триггеры</td></tr>
+        </table>
+
+        <h3>Data pipeline для транзакций</h3>
+        <div class="pipeline">
+          <div class="pipe-step">
+            <div class="pipe-arrow"></div>
+            <div class="pipe-box">
+              <span class="pipe-label">Normalizer</span>
+              <span class="pipe-desc">Очистка, единый формат</span>
+            </div>
+          </div>
+          <div class="pipe-step">
+            <div class="pipe-arrow">↓</div>
+            <div class="pipe-box">
+              <span class="pipe-label">Rules Engine</span>
+              <span class="pipe-desc">Regex/keyword → известные паттерны</span>
+              <span class="pipe-pct">~60%</span>
+            </div>
+          </div>
+          <div class="pipe-step">
+            <div class="pipe-arrow">↓</div>
+            <div class="pipe-box">
+              <span class="pipe-label">Vector Search</span>
+              <span class="pipe-desc">Embeddings + cosine similarity</span>
+              <span class="pipe-pct">~25%</span>
+            </div>
+          </div>
+          <div class="pipe-step">
+            <div class="pipe-arrow">↓</div>
+            <div class="pipe-box">
+              <span class="pipe-label">ML Model</span>
+              <span class="pipe-desc">Fine-tuned BERT/DeBERTa</span>
+              <span class="pipe-pct">~10%</span>
+            </div>
+          </div>
+          <div class="pipe-step">
+            <div class="pipe-arrow">↓</div>
+            <div class="pipe-box">
+              <span class="pipe-label">LLM Fallback</span>
+              <span class="pipe-desc">GPT-4o-mini / локальная модель</span>
+              <span class="pipe-pct">~5%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 6 -->
+      <div id="s6" class="section">
+        <div class="section-header">
+          <span class="section-num">06</span>
+          <h2>Регуляторика и безопасность</h2>
+        </div>
+
+        <h3>Ключевые события 2024–2025</h3>
+        <table>
+          <tr><th>Дата</th><th>Событие</th><th>Влияние</th></tr>
+          <tr><td>Март 2025</td><td>Закон о цифровом соме</td><td>НБКР — исключительное право эмиссии цифровой валюты</td></tr>
+          <tr><td>Фев 2025</td><td>ПЛАС-Форум Digital Kyrgyzstan</td><td>Акцент на ИИ, big data, облака, быстрые платежи</td></tr>
+          <tr><td>Май 2024</td><td>Постановление об эквайринге</td><td>QR-оплата, виртуальные POS</td></tr>
+          <tr><td>Янв 2025</td><td>Новые требования к картам</td><td>Локализация обработки данных, открытые API</td></tr>
+          <tr><td>Апр 2025</td><td>Капитал платёжных организаций</td><td>Минимальный уставной капитал увеличен</td></tr>
+        </table>
+
+        <h3>Лучшие практики безопасности</h3>
+        <div class="card-grid-3">
+          <div class="card">
+            <strong>Шифрование</strong>
+            <p style="margin-top: 6px; color: var(--fg-muted); font-size: 0.9rem;">AES-256 at rest, TLS 1.3 in transit</p>
+          </div>
+          <div class="card">
+            <strong>Анонимизация</strong>
+            <p style="margin-top: 6px; color: var(--fg-muted); font-size: 0.9rem;">Отдельный pipeline с обезличенными данными для аналитики</p>
+          </div>
+          <div class="card">
+            <strong>Consent management</strong>
+            <p style="margin-top: 6px; color: var(--fg-muted); font-size: 0.9rem;">Явное согласие на анализ транзакций</p>
+          </div>
+          <div class="card">
+            <strong>Explainability</strong>
+            <p style="margin-top: 6px; color: var(--fg-muted); font-size: 0.9rem;">«Почему?» — пояснение каждой рекомендации</p>
+          </div>
+          <div class="card">
+            <strong>Audit trail</strong>
+            <p style="margin-top: 6px; color: var(--fg-muted); font-size: 0.9rem;">Логирование всех AI-решений для регулятора</p>
+          </div>
+          <div class="card">
+            <strong>Zero-trust</strong>
+            <p style="margin-top: 6px; color: var(--fg-muted); font-size: 0.9rem;">MFA для доступа к ML-моделям</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 7 -->
+      <div id="s7" class="section">
+        <div class="section-header">
+          <span class="section-num">07</span>
+          <h2>Монетизация и бизнес-модель</h2>
+        </div>
+
+        <h3>Модели дохода</h3>
+        <table>
+          <tr><th>Модель</th><th>Описание</th><th>Пример</th></tr>
+          <tr><td>Internal conversion</td><td>Конверсия в собственные продукты</td><td>Депозит → открытие депозита</td></tr>
+          <tr><td>Referral fees</td><td>Комиссия за привлечение в партнёрские</td><td>Страховка, туры, обучение</td></tr>
+          <tr><td>Embedded finance</td><td>Встраивание сторонних сервисов</td><td>Маркетплейс как у О!Market</td></tr>
+          <tr><td>Dynamic pricing</td><td>Персонализированные ставки</td><td>Кредит на основе behavioral score</td></tr>
+          <tr><td>Subscription</td><td>Премиум-фичи PFM</td><td>Расширенная аналитика, AI-советник</td></tr>
+          <tr><td>Financial media network</td><td>Таргетированная реклама партнёров</td><td>Персонализированные офферы в ленте</td></tr>
+        </table>
+
+        <h3>Целевые метрики</h3>
+        <div class="metric-row">
+          <div class="metric">
+            <div class="metric-value">+35%</div>
+            <div class="metric-label">Вовлечённость с NBA<br><span style="font-size:0.75rem;color:var(--fg-dim)">Southeast Asia бенчмарк</span></div>
+          </div>
+          <div class="metric">
+            <div class="metric-value">+17%</div>
+            <div class="metric-label">Конверсия в продажи<br><span style="font-size:0.75rem;color:var(--fg-dim)">Southeast Asia бенчмарк</span></div>
+          </div>
+          <div class="metric">
+            <div class="metric-value">+9%</div>
+            <div class="metric-label">Рост депозитов YoY<br><span style="font-size:0.75rem;color:var(--fg-dim)">Southeast Asia бенчмарк</span></div>
+          </div>
+          <div class="metric">
+            <div class="metric-value">>20%</div>
+            <div class="metric-label">DAU/MAU<br><span style="font-size:0.75rem;color:var(--fg-dim)">Здоровое приложение</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 8 -->
+      <div id="s8" class="section">
+        <div class="section-header">
+          <span class="section-num">08</span>
+          <h2>Приоритизированный роадмап</h2>
+        </div>
+
+        <div class="phase phase-1">
+          <div class="phase-header">
+            <span class="phase-badge">Фаза 1 · 1–2 мес</span>
+            <h4>Foundation</h4>
+          </div>
+          <table>
+            <tr><th>Приоритет</th><th>Фича</th><th>Технология</th><th>Эффект</th></tr>
+            <tr><td><span class="badge badge-bad">P0</span></td><td>Transaction categorization engine</td><td>Rules + pgvector embeddings</td><td>Базовая PFM</td></tr>
+            <tr><td><span class="badge badge-bad">P0</span></td><td>Spending insights dashboard</td><td>SQL + simple ML</td><td>Вовлечённость +10%</td></tr>
+            <tr><td><span class="badge badge-warn">P1</span></td><td>Subscription tracker</td><td>Rules on recurring patterns</td><td>Удержание</td></tr>
+            <tr><td><span class="badge badge-warn">P1</span></td><td>Push-уведомления с триггерами</td><td>FCM + PostgreSQL</td><td>Re-engagement</td></tr>
+          </table>
+        </div>
+
+        <div class="phase phase-2">
+          <div class="phase-header">
+            <span class="phase-badge">Фаза 2 · 2–4 мес</span>
+            <h4>Personalization</h4>
+          </div>
+          <table>
+            <tr><th>Приоритет</th><th>Фича</th><th>Технология</th><th>Эффект</th></tr>
+            <tr><td><span class="badge badge-warn">P1</span></td><td>Next-best-action engine</td><td>ML + behavioral scoring</td><td>Конверсия +5%</td></tr>
+            <tr><td><span class="badge badge-warn">P1</span></td><td>Dynamic budgets</td><td>Historical analysis + forecasting</td><td>Финансовое здоровье</td></tr>
+            <tr><td><span class="badge badge-info">P2</span></td><td>Personalized recommendations</td><td>Collaborative filtering</td><td>Cross-sell</td></tr>
+            <tr><td><span class="badge badge-info">P2</span></td><td>AI-чат фин. вопросы</td><td>GPT-4o-mini через OpenRouter</td><td>Поддержка 24/7</td></tr>
+          </table>
+        </div>
+
+        <div class="phase phase-3">
+          <div class="phase-header">
+            <span class="phase-badge">Фаза 3 · 4–6 мес</span>
+            <h4>Advanced</h4>
+          </div>
+          <table>
+            <tr><th>Приоритет</th><th>Фича</th><th>Технология</th><th>Эффект</th></tr>
+            <tr><td><span class="badge badge-info">P2</span></td><td>Goal-based auto-saving</td><td>Recurring transfers + rules</td><td>Рост депозитов</td></tr>
+            <tr><td><span class="badge badge-info">P2</span></td><td>Cash flow prediction</td><td>Prophet / LSTM time-series</td><td>Предиктивные советы</td></tr>
+            <tr><td><span class="badge badge-info">P3</span></td><td>Embedded marketplace</td><td>Partner APIs + commission</td><td>Новый revenue stream</td></tr>
+            <tr><td><span class="badge badge-info">P3</span></td><td>Robo-advisor / micro-investing</td><td>ETF/золото fractional</td><td>Удержание молодёжи</td></tr>
+          </table>
+        </div>
+
+        <h3>Риски и митигация</h3>
+        <table>
+          <tr><th>Риск</th><th>Митигация</th></tr>
+          <tr><td>Недостаток ML-данных</td><td>Начать с rules-based, собирать data параллельно</td></tr>
+          <tr><td>Низкий trust в AI-советы</td><td>Explainability («Почему?»), human oversight</td></tr>
+          <tr><td>Регуляторная неопределённость</td><td>Работать через НБКР Sandbox, если есть</td></tr>
+          <tr><td>Слабый интернет в регионах</td><td>Offline-first для аналитики, sync when connected</td></tr>
+          <tr><td>Кыргызский язык</td><td>Multilingual модели (gpt-4o-mini хорошо понимает кириллицу)</td></tr>
+        </table>
+      </div>
+
+      <!-- Section 9 -->
+      <div id="s9" class="section">
+        <div class="section-header">
+          <span class="section-num">09</span>
+          <h2>Выводы</h2>
+        </div>
+
+        <div class="card-grid">
+          <div class="card">
+            <span class="badge badge-bad">1</span>
+            <p style="margin-top: 8px;"><strong>Компаньон отстаёт от лидеров.</strong> MBank и О!Bank опережают по глубине цифрового опыта, но у Компаньона прочная база: 1+ млн пользователей, 500+ сервисов.</p>
+          </div>
+          <div class="card">
+            <span class="badge badge-warn">2</span>
+            <p style="margin-top: 8px;"><strong>Персонализация = выживание.</strong> 74% потребителей ожидают персонализированного опыта. Банки без этого теряют конкурентоспособность.</p>
+          </div>
+          <div class="card">
+            <span class="badge badge-good">3</span>
+            <p style="margin-top: 8px;"><strong>Начать можно просто.</strong> Transaction categorization + spending insights на rules + embeddings — 1–2 месяца, 1–2 разработчика. Эффект виден сразу.</p>
+          </div>
+          <div class="card">
+            <span class="badge badge-info">4</span>
+            <p style="margin-top: 8px;"><strong>Регуляторика благоприятна.</strong> Цифровой сом, ELQR, открытые API — создают среду для digital-first подхода.</p>
+          </div>
+          <div class="card">
+            <span class="badge badge-info">5</span>
+            <p style="margin-top: 8px;"><strong>Монетизация прозрачна.</strong> Внутренняя конверсия + referral fees + embedded marketplace.</p>
+          </div>
+          <div class="card">
+            <span class="badge badge-info">6</span>
+            <p style="margin-top: 8px;"><strong>Moat = данные.</strong> Чем раньше начать собирать behavioral data, тем сильнее конкурентное преимущество.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <div class="container">
+    <p>86 источников · Exa AI deep search · Июнь 2026</p>
+    <p style="margin-top: 8px; font-size: 0.75rem;">Источники: Tazabek, 24.kg, McKinsey, BCG, eMarketer, PYMNTS, Thoughtworks, Moneyhub, Plaid, Personetics, Nature Scientific Reports, GitHub repos (transaction-categorization, SpendSight, spendif-ai, NumbyAI), ING, Commerzbank, Discovery Bank, Mashreq, Revolut, Kakao Pay</p>
+  </div>
+</div>
+
+</body>
+</html>
