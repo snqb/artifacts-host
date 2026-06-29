@@ -611,6 +611,9 @@ Markdown поддерживается:
       <button class="toolbar-btn" id="btn-settings" title="Настройки">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15 1.65 1.65 0 003 13.51V13a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V19a2 2 0 01-4 0v-.09a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.6 9a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 4.6l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 2.36V2a2 2 0 014 0v.09a1.65 1.65 0 001.51 1H15a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
       </button>
+      <button class="toolbar-btn" id="btn-export" title="Сохранить книгу">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+      </button>
     </div>
     
     <div class="progress-track">
@@ -1267,6 +1270,7 @@ Markdown поддерживается:
     
     // Settings
     $('btn-settings').addEventListener('click', () => toggleSettings());
+    $('btn-export').addEventListener('click', () => exportCurrentBook());
     $('btn-back').addEventListener('click', () => {
       $('reader-screen').style.display = 'none';
       $('upload-screen').style.display = 'flex';
@@ -1360,6 +1364,31 @@ Markdown поддерживается:
       $('author-text').value = '';
     }
     
+    function exportCurrentBook() {
+      if (!state.currentBook) return;
+      const book = state.books.find(b => b.id === state.currentBook);
+      if (!book) return;
+      
+      var currentHtml = document.documentElement.outerHTML;
+      var bookData = { t: book.title, c: book.content, p: book.position || 0, d: Date.now() };
+      var jsonStr = JSON.stringify(bookData);
+      var base64 = btoa(unescape(encodeURIComponent(jsonStr)));
+      var tag = '<' + '/script>';
+      var injection = '\n  <script>window.EMBEDDED_BOOK="' + base64 + '";' + tag;
+      var bodyIdx = currentHtml.lastIndexOf('</body>');
+      var newHtml = currentHtml.substring(0, bodyIdx) + injection + '\n' + currentHtml.substring(bodyIdx);
+      var blob = new Blob([newHtml], { type: 'text/html' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = sanitizeFilename(book.title) + '.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Книга сохранена. Открой файл — он работает без интернета.');
+    }
+    
     function exportEmbeddedBook(title, content, author) {
       var currentHtml = document.documentElement.outerHTML;
       var bookData = { t: title, c: content, a: author || '', d: Date.now() };
@@ -1413,7 +1442,6 @@ Markdown поддерживается:
     $('btn-preview').addEventListener('click', previewBook);
     
     // ===== INIT =====
-    loadBooks().then(() => renderLibrary());
     loadSettings();
     document.body.dataset.theme = state.theme;
     $('font-size-val').textContent = state.fontSize;
@@ -1428,16 +1456,19 @@ Markdown поддерживается:
           id,
           title: data.t || 'Книга',
           content: data.c || '',
-          position: 0,
+          position: data.p || 0,
           totalWords: (data.c || '').replace(/<[^>]*>/g, '').split(/\s+/).length,
           addedAt: Date.now()
         });
         if (state.books.length > 20) state.books = state.books.slice(0, 20);
+        saveBooks(); // persist to IndexedDB
         openBook(id);
         showToast('Книга загружена');
       } catch(e) { console.error('Failed to load embedded book:', e); }
-    } else if (!loadFromUrl()) {
-      renderLibrary();
+    } else {
+      loadBooks().then(() => {
+        if (!loadFromUrl()) renderLibrary();
+      });
     }
   </script>
   <script>
