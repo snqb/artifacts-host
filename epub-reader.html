@@ -844,21 +844,31 @@ Markdown поддерживается:
       const arrayBuffer = await file.arrayBuffer();
       const zip = await JSZip.loadAsync(arrayBuffer);
       
-      // Find container.xml → content.opf
+      // Find container.xml → content.opf (try multiple variants)
       let opfPath = '';
-      const containerXml = await zip.file('META-INF/container.xml')?.async('text');
-      if (containerXml) {
-        const match = containerXml.match(/full-path=["']([^"']+)["']/);
-        if (match) opfPath = match[1];
+      const containerPaths = ['META-INF/container.xml', 'meta-inf/container.xml', 'META-INF\container.xml'];
+      for (const cp of containerPaths) {
+        const containerXml = await zip.file(cp)?.async('text');
+        if (containerXml) {
+          const match = containerXml.match(/full-path\s*=\s*["']([^"']+)["']/);
+          if (match) { opfPath = match[1]; break; }
+        }
       }
       
-      // Fallback: find any .opf
+      // Fallback: find any .opf (skip directories)
       if (!opfPath) {
-        const files = Object.keys(zip.files);
+        const files = Object.keys(zip.files).filter(f => !f.endsWith('/'));
         opfPath = files.find(f => f.endsWith('.opf')) || '';
+        // Try common paths
+        if (!opfPath) {
+          const common = ['content.opf', 'OEBPS/content.opf', 'OPS/content.opf', 'EPUB/content.opf'];
+          for (const p of common) {
+            if (zip.file(p)) { opfPath = p; break; }
+          }
+        }
       }
       
-      if (!opfPath) throw new Error('EPUB: no content.opf found');
+      if (!opfPath) throw new Error('EPUB: no content.opf found. Tried container.xml, common paths, and zip scan.');
       
       const opfDir = opfPath.includes('/') ? opfPath.substring(0, opfPath.lastIndexOf('/') + 1) : '';
       const opfXml = await zip.file(opfPath)?.async('text');
@@ -1124,17 +1134,23 @@ Markdown поддерживается:
       if (e.target.files[0]) handleFile(e.target.files[0]);
     });
     
-    $('dropZone').addEventListener('dragover', e => {
-      e.preventDefault();
-      $('dropZone').classList.add('dragover');
+    ['dragover', 'dragenter'].forEach(evt => {
+      $('dropZone').addEventListener(evt, e => {
+        e.preventDefault();
+        e.stopPropagation();
+        $('dropZone').classList.add('dragover');
+      });
     });
-    $('dropZone').addEventListener('dragleave', () => {
+    $('dropZone').addEventListener('dragleave', e => {
+      e.preventDefault();
       $('dropZone').classList.remove('dragover');
     });
     $('dropZone').addEventListener('drop', e => {
       e.preventDefault();
+      e.stopPropagation();
       $('dropZone').classList.remove('dragover');
-      if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+      const file = e.dataTransfer?.files?.[0];
+      if (file) handleFile(file);
     });
     
     $('nav-prev').addEventListener('click', prevColumn);
