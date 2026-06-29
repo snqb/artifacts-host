@@ -924,13 +924,49 @@ Markdown поддерживается:
         const chapterXml = await zip.file(chapterPath)?.async('text');
         if (!chapterXml) return '';
         
-        // Extract body content from XHTML
+        // Extract body content from XHTML and inline images
         const chapterMatch = chapterXml.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
         let html = chapterMatch ? chapterMatch[1] : chapterXml;
         
-        // Clean up: fix relative paths, remove scripts
+        // Remove scripts
         html = html.replace(/<script[\s\S]*?<\/script>/gi, '');
-        html = html.replace(/src=["'][^"']*["']/gi, 'src=""');
+        
+        // Inline images as base64
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        const imgs = tempDiv.querySelectorAll('img[src]');
+        for (const img of imgs) {
+          const src = img.getAttribute('src');
+          if (!src || src.startsWith('data:')) continue;
+          try {
+            // Resolve relative path from chapter directory
+            const chapterDir = chapterPath.includes('/') ? chapterPath.substring(0, chapterPath.lastIndexOf('/') + 1) : '';
+            let imgPath = src;
+            // Handle ../ paths
+            if (src.startsWith('../')) {
+              const parts = chapterDir.split('/').filter(Boolean);
+              let rel = src;
+              while (rel.startsWith('../')) {
+                parts.pop();
+                rel = rel.substring(3);
+              }
+              imgPath = parts.join('/') + '/' + rel;
+            } else if (!src.includes('/') || src.startsWith('Images/') || src.startsWith('images/')) {
+              imgPath = opfDir + src;
+            } else if (!src.startsWith('/')) {
+              imgPath = chapterDir + src;
+            }
+            // Also try just the filename
+            const imgFile = zip.file(imgPath) || zip.file(src);
+            if (imgFile) {
+              const ext = src.split('.').pop().toLowerCase();
+              const mime = {png:'image/png',gif:'image/gif',svg:'image/svg+xml',webp:'image/webp',bmp:'image/bmp'}[ext] || 'image/jpeg';
+              const b64 = await imgFile.async('base64');
+              img.src = 'data:' + mime + ';base64,' + b64;
+            }
+          } catch(e) { console.warn('Failed to inline image:', src, e); }
+        }
+        html = tempDiv.innerHTML;
         
         // Add chapter separator
         return '<hr class="chapter-break">' + html;
