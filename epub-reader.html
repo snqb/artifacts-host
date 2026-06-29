@@ -842,16 +842,34 @@ Markdown поддерживается:
       }
       
       const arrayBuffer = await file.arrayBuffer();
-      const zip = await JSZip.loadAsync(arrayBuffer);
+      
+      // DEBUG: inspect raw file
+      const bytes = new Uint8Array(arrayBuffer);
+      const header = Array.from(bytes.slice(0, 50)).map(b => String.fromCharCode(b)).join('');
+      console.log('File: ' + file.name + ', size: ' + bytes.length);
+      console.log('First 50 bytes:', header);
+      console.log('Is ZIP (PK):', bytes[0] === 0x50 && bytes[1] === 0x4B);
+      
+      let zip = await JSZip.loadAsync(arrayBuffer);
+      
+      // Handle double-zipped files: if zip contains a single .epub file, unwrap it
+      const allFiles = Object.keys(zip.files).filter(f => !f.endsWith('/'));
+      if (allFiles.length === 1 && allFiles[0].toLowerCase().endsWith('.epub')) {
+        const inner = await zip.file(allFiles[0]).async('arraybuffer');
+        zip = await JSZip.loadAsync(inner);
+        console.log('Unwrapped double-zip, inner files:', Object.keys(zip.files).filter(f => !f.endsWith('/')));
+      }
       
       // Find container.xml → content.opf (try multiple variants)
       let opfPath = '';
       const containerPaths = ['META-INF/container.xml', 'meta-inf/container.xml', 'META-INF\container.xml'];
       for (const cp of containerPaths) {
         const containerXml = await zip.file(cp)?.async('text');
+        console.log('Trying ' + cp + ': ' + (containerXml ? 'FOUND (' + containerXml.length + ' chars)' : 'not found'));
         if (containerXml) {
           const match = containerXml.match(/full-path\s*=\s*["']([^"']+)["']/);
-          if (match) { opfPath = match[1]; break; }
+          if (match) { opfPath = match[1]; console.log('OPF path from container: ' + opfPath); break; }
+          else { console.log('Container XML content:', containerXml.substring(0, 500)); }
         }
       }
       
