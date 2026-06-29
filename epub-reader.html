@@ -218,71 +218,107 @@
     .toolbar-btn:hover { background: rgba(0,0,0,0.05); }
     [data-theme="dark"] .toolbar-btn:hover { background: rgba(255,255,255,0.05); }
     
-    .reader-content {
+        .reader-content {
+      position: relative;
       flex: 1;
       overflow: hidden;
-      position: relative;
-      padding: 0 24px;
-    }
-    
-    .reader-pages {
-      height: 100%;
       display: flex;
-      transition: transform 0.3s ease;
+      align-items: stretch;
     }
-    
-    .page {
-      min-width: 100%;
-      height: 100%;
-      padding: 24px 0;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      font-family: var(--font-serif);
-      line-height: 1.7;
-      font-size: 18px;
-    }
-    
-    .page h1, .page h2, .page h3 {
-      font-family: var(--font-sans);
-      margin-top: 1.5em;
-      margin-bottom: 0.5em;
-      line-height: 1.3;
-    }
-    
-    .page p { margin-bottom: 1em; }
-    .page blockquote {
-      border-left: 3px solid var(--accent);
-      padding-left: 16px;
-      margin: 1em 0;
-      color: var(--text-secondary);
-      font-style: italic;
-    }
-    .page code {
-      background: rgba(0,0,0,0.05);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-family: 'SF Mono', Monaco, monospace;
-      font-size: 0.85em;
-    }
-    .page pre {
-      background: rgba(0,0,0,0.05);
-      padding: 16px;
-      border-radius: 8px;
-      overflow-x: auto;
-      margin: 1em 0;
-    }
-    .page pre code { background: none; padding: 0; }
-    
     .reader-nav {
       position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 30%;
-      z-index: 10;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(128,128,128,0.06);
+      backdrop-filter: blur(8px);
+      border: none;
       cursor: pointer;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      transition: opacity 0.3s;
+      opacity: 0;
     }
-    .reader-nav.prev { left: 0; }
-    .reader-nav.next { right: 0; }
+    @media (hover: none) and (pointer: coarse) { .reader-nav { opacity: 0.4; } }
+    .reader-content:hover .reader-nav { opacity: 1; }
+    .reader-nav:hover { background: rgba(128,128,128,0.15); color: var(--text); }
+    .reader-nav.prev { left: 8px; }
+    .reader-nav.next { right: 8px; }
+    .book-columns {
+      flex: 1;
+      height: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      line-height: 1.7;
+      color: var(--text);
+      column-fill: auto;
+      padding: 0 32px;
+    }
+    .book-columns::-webkit-scrollbar { display: none; }
+    @media (max-width: 699px) {
+      .book-columns { column-width: calc(100vw - 64px); column-gap: 16px; }
+    }
+    @media (min-width: 700px) and (max-width: 1099px) {
+      .book-columns { column-width: 320px; column-gap: 40px; padding: 0 40px; }
+    }
+    @media (min-width: 1100px) {
+      .book-columns { column-width: 360px; column-gap: 48px; padding: 0 48px; }
+    }
+    .book-columns * { max-width: 100%; }
+    .book-columns img { height: auto; border-radius: 8px; }
+    .book-columns h1 { font-size: 1.8em; margin-bottom: 0.6em; }
+    .book-columns h2 { font-size: 1.4em; margin-bottom: 0.5em; }
+    .book-columns h3 { font-size: 1.2em; margin-bottom: 0.4em; }
+    .book-columns p { margin-bottom: 0.8em; }
+    .book-columns blockquote {
+      border-left: 3px solid var(--accent);
+      padding-left: 1em;
+      color: var(--text-secondary);
+      font-style: italic;
+      margin: 0.8em 0;
+    }
+    .book-columns code {
+      background: rgba(128,128,128,0.1);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+    .book-columns pre {
+      background: rgba(128,128,128,0.06);
+      padding: 1em;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 0.8em 0;
+      font-size: 0.85em;
+    }
+    .book-columns table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 0.8em 0;
+      font-size: 0.9em;
+    }
+    .book-columns th, .book-columns td {
+      border: 1px solid var(--border);
+      padding: 0.4em 0.6em;
+      text-align: left;
+    }
+    .book-columns th { background: rgba(128,128,128,0.05); font-weight: 600; }
+    .book-columns hr { border: none; border-top: 1px solid var(--border); margin: 1em 0; }
+    .chapter-break {
+      break-before: column;
+      border: none;
+      margin: 0;
+      height: 0;
+    }
     
     .progress-track {
       height: 3px;
@@ -560,9 +596,13 @@ Markdown поддерживается:
     </div>
     
     <div class="reader-content" id="reader-content">
-      <div class="reader-nav prev" id="nav-prev"></div>
-      <div class="reader-nav next" id="nav-next"></div>
-      <div class="reader-pages" id="reader-pages"></div>
+      <button class="reader-nav prev" id="nav-prev" aria-label="Previous">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="book-columns" id="book-columns"></div>
+      <button class="reader-nav next" id="nav-next" aria-label="Next">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
     </div>
   </div>
   
@@ -602,11 +642,8 @@ Markdown поддерживается:
     const state = {
       books: [],         // [{id, title, content, position, totalWords, addedAt}]
       currentBook: null, // id
-      currentPage: 0,
-      totalPages: 0,
       fontSize: 18,
-      theme: 'light',
-      pages: []          // array of HTML strings
+      theme: 'light'
     };
     
     // ===== DOM =====
@@ -872,175 +909,60 @@ Markdown поддерживается:
       openBook(id);
     }
     
-    // ===== PAGINATION =====
-    function paginate(htmlContent) {
-      const container = document.createElement('div');
-      container.innerHTML = htmlContent;
-      
-      // Get all text nodes and block elements
-      const pages = [];
-      const contentEl = $('reader-pages');
-      const pageHeight = $('reader-content').clientHeight - 48; // padding
-      
-      // Simple approach: split by paragraphs/headings
-      const elements = Array.from(container.children);
-      let currentPage = document.createElement('div');
-      currentPage.className = 'page';
-      
-      // We need to measure. Create a temp container.
-      const measureDiv = document.createElement('div');
-      measureDiv.className = 'page';
-      measureDiv.style.position = 'absolute';
-      measureDiv.style.visibility = 'hidden';
-      measureDiv.style.width = contentEl.clientWidth + 'px';
-      $('reader-screen').appendChild(measureDiv);
-      
-      for (const el of elements) {
-        currentPage.appendChild(el.cloneNode(true));
-        measureDiv.innerHTML = currentPage.innerHTML;
-        
-        if (measureDiv.scrollHeight > pageHeight) {
-          // Remove last element, save page, start new
-          currentPage.removeChild(currentPage.lastChild);
-          if (currentPage.children.length > 0) {
-            pages.push(currentPage.innerHTML);
-          }
-          currentPage = document.createElement('div');
-          currentPage.className = 'page';
-          currentPage.appendChild(el.cloneNode(true));
-        }
-      }
-      
-      if (currentPage.children.length > 0) {
-        pages.push(currentPage.innerHTML);
-      }
-      
-      measureDiv.remove();
-      return pages;
-    }
-    
-    // Better pagination: word-based
-    function paginateWords(htmlContent) {
-      const text = htmlContent.replace(/<[^>]*>/g, ' ');
-      const words = text.split(/\s+/).filter(w => w.length > 0);
-      
-      // Estimate: ~300 words per screen on mobile, ~500 on desktop
-      const isMobile = window.innerWidth < 768;
-      const wordsPerPage = isMobile ? 250 : 450;
-      
-      const pages = [];
-      for (let i = 0; i < words.length; i += wordsPerPage) {
-        const slice = words.slice(i, i + wordsPerPage);
-        pages.push('<p>' + slice.join(' ') + '</p>');
-      }
-      
-      return pages;
-    }
-    
-    // Even better: use the actual DOM measurement
-    function paginateDOM(htmlContent) {
-      const pages = [];
-      const temp = document.createElement('div');
-      temp.innerHTML = htmlContent;
-      temp.style.position = 'absolute';
-      temp.style.visibility = 'hidden';
-      temp.style.width = ($('reader-content').clientWidth - 48) + 'px';
-      temp.style.fontSize = state.fontSize + 'px';
-      temp.style.lineHeight = '1.7';
-      temp.style.fontFamily = "Georgia, serif";
-      $('reader-screen').appendChild(temp);
-      
-      const pageHeight = $('reader-content').clientHeight - 48;
-      const children = Array.from(temp.children);
-      
-      let currentPage = [];
-      const pageDiv = document.createElement('div');
-      pageDiv.style.fontSize = state.fontSize + 'px';
-      pageDiv.style.lineHeight = '1.7';
-      pageDiv.style.fontFamily = "Georgia, serif";
-      pageDiv.style.width = ($('reader-content').clientWidth - 48) + 'px';
-      $('reader-screen').appendChild(pageDiv);
-      
-      for (const child of children) {
-        currentPage.push(child);
-        pageDiv.innerHTML = currentPage.map(c => c.outerHTML).join('');
-        
-        if (pageDiv.scrollHeight > pageHeight && currentPage.length > 1) {
-          currentPage.pop();
-          pages.push(currentPage.map(c => c.outerHTML).join(''));
-          currentPage = [child];
-        }
-      }
-      
-      if (currentPage.length > 0) {
-        pages.push(currentPage.map(c => c.outerHTML).join(''));
-      }
-      
-      temp.remove();
-      pageDiv.remove();
-      return pages;
-    }
-    
-    // ===== READER =====
+    // ===== BOOK RENDERING (CSS columns, browser-native pagination) =====
     function openBook(bookId) {
       const book = state.books.find(b => b.id === bookId);
       if (!book) return;
       
       state.currentBook = bookId;
-      state.currentPage = book.position || 0;
-      
       $('book-title').textContent = book.title;
       $('upload-screen').style.display = 'none';
       $('reader-screen').style.display = 'flex';
+      $('share-row').style.display = 'flex';
       
-      // Paginate
-      state.pages = paginateDOM(book.content);
-      state.totalPages = state.pages.length;
+      // Render content — browser paginates via CSS columns
+      const cols = $('book-columns');
+      cols.innerHTML = book.content;
+      cols.style.fontSize = state.fontSize + 'px';
       
-      renderPages();
-      updateProgress();
-      goToPage(state.currentPage);
-    }
-    
-    function renderPages() {
-      const container = $('reader-pages');
-      container.innerHTML = state.pages.map((page, i) => 
-        `<div class="page" data-page="${i}">${page}</div>`
-      ).join('');
-    }
-    
-    function goToPage(n) {
-      if (n < 0) n = 0;
-      if (n >= state.totalPages) n = state.totalPages - 1;
-      state.currentPage = n;
+      // Restore scroll position
+      requestAnimationFrame(() => {
+        const max = cols.scrollWidth - cols.clientWidth;
+        cols.scrollLeft = max * (book.position || 0);
+        updateProgress();
+      });
       
-      const container = $('reader-pages');
-      container.style.transform = `translateX(-${n * 100}%)`;
-      
-      updateProgress();
-      savePosition();
+      updateShareUrl();
     }
     
     function updateProgress() {
-      const pct = state.totalPages > 0 
-        ? Math.round((state.currentPage / (state.totalPages - 1)) * 100) 
-        : 0;
+      const cols = $('book-columns');
+      if (!cols) return;
+      const max = cols.scrollWidth - cols.clientWidth;
+      const pct = max > 0 ? Math.round((cols.scrollLeft / max) * 100) : 0;
       $('progress-pct').textContent = pct + '%';
       $('progress-fill').style.width = pct + '%';
-    }
-    
-    function savePosition() {
-      const book = state.books.find(b => b.id === state.currentBook);
-      if (book) {
-        book.position = state.currentPage;
-        book.totalPages = state.totalPages;
-        saveBooks();
-        updateShareUrl();
+      
+      if (state.currentBook) {
+        const book = state.books.find(b => b.id === state.currentBook);
+        if (book) {
+          book.position = max > 0 ? cols.scrollLeft / max : 0;
+          saveBooks();
+        }
       }
     }
     
-    function prevPage() { goToPage(state.currentPage - 1); }
-    function nextPage() { goToPage(state.currentPage + 1); }
+    function scrollColumn(dir) {
+      const cols = $('book-columns');
+      const style = getComputedStyle(cols);
+      const colW = parseFloat(style.columnWidth) || cols.clientWidth * 0.8;
+      const gap = parseFloat(style.columnGap) || 32;
+      cols.scrollBy({ left: dir * (colW + gap), behavior: 'smooth' });
+      setTimeout(updateProgress, 300);
+    }
+    
+    function prevColumn() { scrollColumn(-1); }
+    function nextColumn() { scrollColumn(1); }
     
     // ===== SHAREABLE URL =====
     function updateShareUrl() {
@@ -1051,7 +973,7 @@ Markdown поддерживается:
       const payload = {
         t: book.title,
         c: book.content.substring(0, 30000), // limit for URL length
-        p: state.currentPage
+        p: (book.position || 0)
       };
       const json = JSON.stringify(payload);
       const compressed = btoa(unescape(encodeURIComponent(json)));
@@ -1123,9 +1045,7 @@ Markdown поддерживается:
       }
       
       list.innerHTML = state.books.map(book => {
-        const pct = book.totalPages > 0 
-          ? Math.round((book.position / (book.totalPages - 1)) * 100) 
-          : 0;
+        const pct = Math.round((book.position || 0) * 100);
         return `
           <div class="book-item" data-id="${book.id}">
             <div class="book-thumb">📖</div>
@@ -1174,14 +1094,15 @@ Markdown поддерживается:
       if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
     });
     
-    $('nav-prev').addEventListener('click', prevPage);
-    $('nav-next').addEventListener('click', nextPage);
+    $('nav-prev').addEventListener('click', prevColumn);
+    $('nav-next').addEventListener('click', nextColumn);
     
     // Keyboard
     document.addEventListener('keydown', e => {
       if ($('reader-screen').style.display === 'none') return;
-      if (e.key === 'ArrowLeft') prevPage();
-      if (e.key === 'ArrowRight' || e.key === ' ') nextPage();
+      if (e.key === 'ArrowLeft') { e.preventDefault(); prevColumn(); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); nextColumn(); }
+      if (e.key === ' ' || e.key === 'Spacebar') { e.preventDefault(); nextColumn(); }
       if (e.key === 'Escape') toggleSettings(false);
     });
     
@@ -1193,7 +1114,7 @@ Markdown поддерживается:
     $('reader-content').addEventListener('touchend', e => {
       const diff = touchStartX - e.changedTouches[0].screenX;
       if (Math.abs(diff) > 50) {
-        diff > 0 ? nextPage() : prevPage();
+        scrollColumn(diff > 0 ? -1 : 1);
       }
     }, { passive: true });
     
@@ -1224,16 +1145,7 @@ Markdown поддерживается:
       state.theme = theme;
       document.body.dataset.theme = theme;
       saveSettings();
-      // Re-paginate if reading
-      if (state.currentBook) {
-        const book = state.books.find(b => b.id === state.currentBook);
-        if (book) {
-          state.pages = paginateDOM(book.content);
-          state.totalPages = state.pages.length;
-          renderPages();
-          goToPage(state.currentPage);
-        }
-      }
+      // Theme changed — columns auto-flow, no repagination needed
     }
     
     // Font size
@@ -1243,21 +1155,15 @@ Markdown поддерживается:
     function changeFontSize(delta) {
       state.fontSize = Math.max(12, Math.min(32, state.fontSize + delta));
       $('font-size-val').textContent = state.fontSize;
-      document.querySelectorAll('.page').forEach(p => p.style.fontSize = state.fontSize + 'px');
+      const cols = $('book-columns'); if (cols) cols.style.fontSize = state.fontSize + 'px';
       saveSettings();
-      // Re-paginate
-      if (state.currentBook) {
-        const book = state.books.find(b => b.id === state.currentBook);
-        if (book) {
-          state.pages = paginateDOM(book.content);
-          state.totalPages = state.pages.length;
-          renderPages();
-          goToPage(state.currentPage);
-        }
-      }
     }
     
     $('btn-copy').addEventListener('click', copyShareUrl);
+    
+    
+    // Scroll-based progress tracking
+    $('book-columns').addEventListener('scroll', updateProgress, { passive: true });
     
     // Close settings on outside click
     document.addEventListener('click', e => {
