@@ -705,6 +705,7 @@ Markdown поддерживается:
     
     // ===== FILE HANDLING =====
     async function handleFile(file) {
+      try {
       const ext = file.name.split('.').pop().toLowerCase();
       let content = '';
       let title = file.name.replace(/\.[^/.]+$/, '');
@@ -731,6 +732,10 @@ Markdown поддерживается:
       }
       
       addBook(title, content);
+      } catch(e) {
+        console.error('handleFile error:', e);
+        showToast('Ошибка: ' + e.message);
+      }
     }
     
     async function parseDocx(file) {
@@ -842,51 +847,26 @@ Markdown поддерживается:
       }
       
       const arrayBuffer = await file.arrayBuffer();
-      
-      // DEBUG: inspect raw file
-      const bytes = new Uint8Array(arrayBuffer);
-      const header = Array.from(bytes.slice(0, 50)).map(b => String.fromCharCode(b)).join('');
-      console.log('File: ' + file.name + ', size: ' + bytes.length);
-      console.log('First 50 bytes:', header);
-      console.log('Is ZIP (PK):', bytes[0] === 0x50 && bytes[1] === 0x4B);
-      
       let zip = await JSZip.loadAsync(arrayBuffer);
       
-      // Handle double-zipped files: if zip contains a single .epub file, unwrap it
+      // Handle double-zipped files
       const allFiles = Object.keys(zip.files).filter(f => !f.endsWith('/'));
       if (allFiles.length === 1 && allFiles[0].toLowerCase().endsWith('.epub')) {
         const inner = await zip.file(allFiles[0]).async('arraybuffer');
         zip = await JSZip.loadAsync(inner);
-        console.log('Unwrapped double-zip, inner files:', Object.keys(zip.files).filter(f => !f.endsWith('/')));
       }
       
-      // Find container.xml → content.opf (try multiple variants)
+      // Find OPF path via container.xml
       let opfPath = '';
-      const containerPaths = ['META-INF/container.xml', 'meta-inf/container.xml', 'META-INF\container.xml'];
-      for (const cp of containerPaths) {
-        const containerXml = await zip.file(cp)?.async('text');
-        console.log('Trying ' + cp + ': ' + (containerXml ? 'FOUND (' + containerXml.length + ' chars)' : 'not found'));
-        if (containerXml) {
-          const match = containerXml.match(/full-path\s*=\s*["']([^"']+)["']/);
-          if (match) { opfPath = match[1]; console.log('OPF path from container: ' + opfPath); break; }
-          else { console.log('Container XML content:', containerXml.substring(0, 500)); }
-        }
+      const containerXml = await zip.file('META-INF/container.xml')?.async('text');
+      if (containerXml) {
+        const m = containerXml.match(/full-path\s*=\s*["']([^"']+)["']/);
+        if (m) opfPath = m[1];
       }
-      
-      // Fallback: find any .opf (skip directories)
       if (!opfPath) {
-        const files = Object.keys(zip.files).filter(f => !f.endsWith('/'));
-        opfPath = files.find(f => f.endsWith('.opf')) || '';
-        // Try common paths
-        if (!opfPath) {
-          const common = ['content.opf', 'OEBPS/content.opf', 'OPS/content.opf', 'EPUB/content.opf'];
-          for (const p of common) {
-            if (zip.file(p)) { opfPath = p; break; }
-          }
-        }
+        opfPath = Object.keys(zip.files).filter(f => !f.endsWith('/') && f.endsWith('.opf'))[0] || '';
       }
-      
-      if (!opfPath) throw new Error('EPUB: no content.opf found. Tried container.xml, common paths, and zip scan.');
+      if (!opfPath) throw new Error('EPUB: no content.opf found');
       
       const opfDir = opfPath.includes('/') ? opfPath.substring(0, opfPath.lastIndexOf('/') + 1) : '';
       const opfXml = await zip.file(opfPath)?.async('text');
@@ -897,16 +877,16 @@ Markdown поддерживается:
       const opfDoc = parser.parseFromString(opfXml, 'application/xml');
       const ns = { opf: 'http://www.idpf.org/2007/opf', dc: 'http://purl.org/dc/elements/1.1/' };
       
-      // Get title
+      // Title
       const titleNode = opfDoc.getElementsByTagNameNS(ns.dc, 'title')[0];
-      const title = titleNode ? titleNode.textContent.trim() : 'Книга';
+      const title = titleNode ? titleNode.textContent.trim() : file.name.replace(/\.[^/.]+$/, '');
       
-      // Get spine (reading order)
+      // Spine → reading order
       const spine = opfDoc.getElementsByTagNameNS(ns.opf, 'spine')[0];
       const itemrefs = Array.from(spine?.getElementsByTagNameNS(ns.opf, 'itemref') || []);
-      const idRefs = itemrefs.map(ref => ref.getAttribute('idref')).filter(Boolean);
+      const idRefs = itemrefs.map(r => r.getAttribute('idref')).filter(Boolean);
       
-      // Get manifest (id → href mapping)
+      // Manifest → id→href map
       const manifest = opfDoc.getElementsByTagNameNS(ns.opf, 'manifest')[0];
       const items = Array.from(manifest?.getElementsByTagNameNS(ns.opf, 'item') || []);
       const hrefMap = {};
@@ -916,67 +896,69 @@ Markdown поддерживается:
         if (id && href) hrefMap[id] = href;
       });
       
-      // Read chapters in order
-      const chapterPromises = idRefs.map(async idref => {
+      // Pre-load ALL images from zip into a map: path → base64 data URL
+      const imageCache = {};
+      const zipFiles = Object.keys(zip.files).filter(f => !f.endsWith('/'));
+      for (const f of zipFiles) {
+        const lower = f.toLowerCase();
+        if (lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg') || 
+            lower.endsWith('.gif') || lower.endsWith('.svg') || lower.endsWith('.webp')) {
+          try {
+            const ext = lower.split('.').pop();
+            const mime = {png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',svg:'image/svg+xml',webp:'image/webp'}[ext] || 'image/jpeg';
+            const b64 = await zip.file(f).async('base64');
+            imageCache[f] = 'data:' + mime + ';base64,' + b64;
+            // Also cache by basename for relative path matching
+            const basename = f.split('/').pop();
+            imageCache[basename] = imageCache[f];
+          } catch(e) {}
+        }
+      }
+      
+      // Read chapters in spine order
+      const chapters = [];
+      for (const idref of idRefs) {
         const href = hrefMap[idref];
-        if (!href) return '';
+        if (!href) continue;
         const chapterPath = opfDir + href;
         const chapterXml = await zip.file(chapterPath)?.async('text');
-        if (!chapterXml) return '';
+        if (!chapterXml) continue;
         
-        // Extract body content from XHTML and inline images
-        const chapterMatch = chapterXml.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-        let html = chapterMatch ? chapterMatch[1] : chapterXml;
+        // Extract body
+        const m = chapterXml.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+        let bodyHtml = m ? m[1] : chapterXml;
         
         // Remove scripts
-        html = html.replace(/<script[\s\S]*?<\/script>/gi, '');
+        bodyHtml = bodyHtml.replace(/<script[\s\S]*?<\/script>/gi, '');
         
-        // Inline images as base64
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = html;
-        const imgs = tempDiv.querySelectorAll('img[src]');
-        console.log('Chapter', chapterPath, '- images found:', imgs.length);
-        for (const img of imgs) {
-          const src = img.getAttribute('src');
-          if (!src || src.startsWith('data:')) continue;
-          console.log('  Image src:', src, '→ resolved to:', opfDir + src);
-          try {
-            // Resolve relative path from chapter directory
-            const chapterDir = chapterPath.includes('/') ? chapterPath.substring(0, chapterPath.lastIndexOf('/') + 1) : '';
-            let imgPath = src;
-            // Handle ../ paths
-            if (src.startsWith('../')) {
-              const parts = chapterDir.split('/').filter(Boolean);
-              let rel = src;
-              while (rel.startsWith('../')) {
-                parts.pop();
-                rel = rel.substring(3);
-              }
-              imgPath = parts.join('/') + '/' + rel;
-            } else if (!src.includes('/') || src.startsWith('Images/') || src.startsWith('images/')) {
-              imgPath = opfDir + src;
-            } else if (!src.startsWith('/')) {
-              imgPath = chapterDir + src;
+        // Replace image src with base64 — use simple regex on the string
+        bodyHtml = bodyHtml.replace(/src=["']([^"']+)["']/gi, (match, src) => {
+          if (src.startsWith('data:')) return match;
+          // Try: exact path, basename, opfDir+src, chapterDir+src
+          const basename = src.split('/').pop();
+          const chapterDir = chapterPath.includes('/') ? chapterPath.substring(0, chapterPath.lastIndexOf('/') + 1) : '';
+          const candidates = [
+            src,
+            basename,
+            opfDir + src,
+            opfDir + basename,
+            chapterDir + src
+          ];
+          for (const c of candidates) {
+            if (imageCache[c]) return 'src="' + imageCache[c] + '"';
+          }
+          // Last resort: search all zip files for basename
+          for (const zf of zipFiles) {
+            if (zf.split('/').pop() === basename) {
+              if (imageCache[zf]) return 'src="' + imageCache[zf] + '"';
             }
-            // Also try just the filename
-            console.log('  Looking for:', imgPath, 'or', src, '→ found:', !!(zip.file(imgPath) || zip.file(src)));
-            const imgFile = zip.file(imgPath) || zip.file(src);
-            if (imgFile) {
-              const ext = src.split('.').pop().toLowerCase();
-              const mime = {png:'image/png',gif:'image/gif',svg:'image/svg+xml',webp:'image/webp',bmp:'image/bmp'}[ext] || 'image/jpeg';
-              const b64 = await imgFile.async('base64');
-              img.src = 'data:' + mime + ';base64,' + b64;
-            }
-          } catch(e) { console.warn('Failed to inline image:', src, e); }
-        }
-        html = tempDiv.innerHTML;
-        console.log('Chapter images inlined:', tempDiv.querySelectorAll('img[data:'), 'remaining broken:', tempDiv.querySelectorAll('img:not([src^="data:"])').length);
+          }
+          return 'src=""';
+        });
         
-        // Add chapter separator
-        return '<hr class="chapter-break">' + html;
-      });
+        chapters.push('<hr class="chapter-break">' + bodyHtml);
+      }
       
-      const chapters = await Promise.all(chapterPromises);
       return { title, content: chapters.join('\n') };
     }
     
