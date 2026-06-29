@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rule-Based Offers + Финансовый Аналитик — Банк Компаньон</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fafafa; --fg: #111; --fg-muted: #555; --fg-dim: #888;
+  --border: #e0e0e0; --accent: #2563eb; --accent-light: #eff6ff; --accent-bg: #dbeafe;
+  --good: #16a34a; --good-bg: #dcfce7; --warn: #ca8a04; --warn-bg: #fef9c3;
+  --bad: #dc2626; --bad-bg: #fee2e2; --card-bg: #fff;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
+  --shadow-lg: 0 4px 6px -1px rgba(0,0,0,0.08), 0 12px 24px rgba(0,0,0,0.06);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--fg); line-height: 1.6; font-size: 15px; -webkit-font-smoothing: antialiased; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+.hero { background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #1e40af 100%); color: white; padding: 64px 0 48px; position: relative; overflow: hidden; }
+.hero::before { content: ''; position: absolute; top: -50%; right: -20%; width: 600px; height: 600px; background: rgba(255,255,255,0.03); border-radius: 50%; }
+.hero h1 { font-size: 2.4rem; font-weight: 800; line-height: 1.15; margin-bottom: 16px; max-width: 800px; }
+.hero .subtitle { font-size: 1.1rem; opacity: 0.85; max-width: 640px; font-weight: 400; line-height: 1.5; }
+.section { padding: 48px 0; border-bottom: 1px solid var(--border); }
+.section:last-child { border-bottom: none; }
+.section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+.section-num { font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; font-weight: 600; color: var(--accent); background: var(--accent-bg); padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+.section h2 { font-size: 1.5rem; font-weight: 700; }
+.section h3 { font-size: 1.15rem; font-weight: 600; margin: 28px 0 12px; }
+.section h4 { font-size: 1rem; font-weight: 600; margin: 20px 0 8px; color: var(--fg-muted); }
+.card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin: 16px 0; box-shadow: var(--shadow); }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 20px 0; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin: 16px 0; }
+th { text-align: left; padding: 10px 12px; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--fg-dim); border-bottom: 2px solid var(--border); }
+td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+tr:hover td { background: rgba(0,0,0,0.015); }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 0.78rem; font-weight: 600; }
+.badge-good { background: var(--good-bg); color: var(--good); }
+.badge-warn { background: var(--warn-bg); color: var(--warn); }
+.badge-bad { background: var(--bad-bg); color: var(--bad); }
+.badge-info { background: var(--accent-light); color: var(--accent); }
+pre, code { font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; }
+pre { background: #1e1e2e; color: #cdd6f4; padding: 16px 20px; border-radius: 10px; overflow-x: auto; margin: 16px 0; line-height: 1.5; }
+.callout { border-left: 4px solid var(--accent); background: var(--accent-light); padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 0.95rem; }
+.callout-good { border-color: var(--good); background: var(--good-bg); }
+.callout-warn { border-color: var(--warn); background: var(--warn-bg); }
+.rule-box { background: var(--card-bg); border: 2px solid var(--accent-bg); border-radius: 12px; padding: 20px 24px; margin: 16px 0; }
+.rule-box .rule-title { font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+.rule-box .rule-meta { font-size: 0.85rem; color: var(--fg-dim); margin-bottom: 12px; }
+.footer { padding: 40px 0; text-align: center; color: var(--fg-dim); font-size: 0.85rem; border-top: 1px solid var(--border); }
+@media (max-width: 640px) {
+  .hero h1 { font-size: 1.8rem; }
+  .card-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="container">
+    <h1>Rule-Based Offers + Финансовый Аналитик</h1>
+    <p class="subtitle">Дополнение к ресерчу: конкретные примеры персонализированных предложений из финтех-приложений + полная спецификация rule-based механизма для раздела «Финансовый Аналитик» в мобильном приложении Компаньон</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="container">
+
+    <!-- Section 1: Примеры из приложений -->
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2>Конкретные примеры персонализированных предложений в финтех-приложениях</h2>
+    </div>
+
+    <h3>Revolut — AIR + RevPoints + инсайты</h3>
+    <div class="card-grid">
+      <div class="card">
+        <strong>AIR AI-ассистент</strong>
+        <p style="margin-top:6px;color:var(--fg-muted);font-size:0.9rem;">
+        «Где мои деньги?» → анализ трат по категориям. «Оцени сбережения» → прогноз накоплений. «Поставь на паузу Spotify» → управление подписками внутри чата. 13 млн UK пользователей, апрель 2026.
+        </p>
+      </div>
+      <div class="card">
+        <strong>RevPoints — геймификация трат</strong>
+        <p style="margin-top:6px;color:var(--fg-muted);font-size:0.9rem;">
+        1 RevPoint за £1 потраченный. Бонусы: spare-change, in-app challenges, booking через Revolut Stays. 3000 RevPoints за 150 транзакций новым пользователям. Конвертация в 30+ программ лояльности авиакомпаний.
+        </p>
+      </div>
+      <div class="card">
+        <strong>Персонализированные мультипликаторы</strong>
+        <p style="margin-top:6px;color:var(--fg-muted);font-size:0.9rem;">
+        Nespresso ×6, Amazon Prime ×20, GameStop ×17 — мультипликаторы очков за покупки у партнёров. Black Friday: до ×10 RevPoints при оплате через Revolut Pay. Динамические офферы на основе истории трат.
+        </p>
+      </div>
+      <div class="card">
+        <strong>Plan Partnerships</strong>
+        <p style="margin-top:6px;color:var(--fg-muted);font-size:0.9rem;">
+        Premium ($9.99/мес): NordVPN, Tinder Plus, Sleep Cycle. Metal ($24.99/мес): + MasterClass, Financial Times, WeWork, ClassPass. Персонализированные подборки на основе категорий трат.
+        </p>
+      </div>
+    </div>
+
+    <h3>Monzo — Trends + Category Targets + Pots</h3>
+    <div class="card-grid">
+      <div class="card">
+        <strong>Trends — единая картина</strong>
+        <p style="margin-top:6px;color:var(--fg-muted);font-size:0.9rem;">
+        Объединяет Monzo + внешние счета. Показывает: доход − траты = остаток. Графики неделя-к-неделе, месяц-к-месяцу. Тап по категории → детализация по торговцам. Все клиенты бесплатно (ранее Premium).
+        </p>
+      </div>
+      <div class="card">
+        <strong>Category Targets — лимиты по категориям</strong>
+        <p style="margin-top:6px;color:var(--fg-muted);font-size:0.9rem;">
+        Установить месячный лимит на «Еда», «Транспорт», «Развлечения». Система анализирует прошлые траты и предлагает реалистичные цели. Алерт при приближении к лимиту. Plus/Premium: автоматические рекомендации target-ов.
+        </p>
+      </div>
+      <div class="card">
+        <strong>Pots — цифровые конверты</strong>
+        <p style="margin-top:6px;color:var(--fg-muted);font-size:0.9rem;">
+        До 20 отдельных «горшочков» для целей: «Отпуск», «Ремонт», «Налоги». Round-up — округление покупок до фунта, сдача в Pot. Virtual cards — отдельная карта на каждый Pot для контроля трат. Bills Manager — автовыделение средств на счета.
+        </p>
+      </div>
+      <div class="card">
+        <strong>Year in Monzo — персонализированные «эры»</strong>
+        <p style="margin-top:6px;color:var(--fg-muted);font-size:0.9rem;">
+        Годовой отчёт: «Merchant Era» (топ-торговец), «Travel Era» (разнообразие валют), «Social Era» (Monzo-to-Monzo переводы). Data-driven storytelling. Минимум 15 транзакций для участия. Условные категории на основе паттернов.
+        </p>
+      </div>
+    </div>
+
+    <h3>Starling — Spaces + Spending Intelligence</h3>
+    <div class="card-grid">
+      <div class="card">
+        <strong>Spaces — цифровое кэш-стаффинг</strong>
+        <p style="margin-top:6px;color:var(--fg-muted);font-size:0.9rem;">
+        Создание Space для каждой категории: «Бензин», «Продукты», «Праздники». Оплата Direct Debits из конкретного Space. Virtual cards привязаны к Spaces. Round-up — сдача в Space. Savings Goals с процентной ставкой 2.50% AER.
+        </p>
+      </div>
+      <div class="card">
+        <strong>Spending Intelligence (AI-поиск)</strong>
+        <p style="margin-top:6px;color:var(--fg-muted);font-size:0.9rem;">
+        «Сколько я потратил на McDonald's за 3 месяца?» → график + аналитика. 50+ категорий трат. Графики и breakdown по ритейлерам. Построено на Google Gemini. Opt-in. Поиск естественным языком по всей истории транзакций.
+        </p>
+      </div>
+      <div class="card">
+        <strong>Starling Assistant (Agentic AI)</strong>
+        <p style="margin-top:6px;color:var(--fg-muted);font-size:0.9rem;">
+        Голосовые/текстовые промпты: «Положи £500 на поездку» → автоперевод в Space. «Покажи мой бюджет» → анализ категорий. «Поставь цель накопить £1000 к декабрю» → рассчёт ежемесячных отчислений. Built on Google Gemini/Cloud.
+        </p>
+      </div>
+    </div>
+
+    <h3>N26 — Insights + Rules + RoundUps</h3>
+    <div class="card-grid">
+      <div class="card">
+        <strong>Insights — автокатегоризация</strong>
+        <p style="margin-top:6px;color:var(--fg-muted);font-size:0.9rem;">
+        Реальная автокатегоризация транзакций по 20+ категориям. Инстант-нотификации с категорией. Анализ трендов: неделя-к-неделе, месяц-к-месяцу. Подключение внешних банков (Open Banking) для 360° вида.
+        </p>
+      </div>
+      <div class="card">
+        <strong>Rules — автоправила</strong>
+        <p style="margin-top:6px;color:var(--fg-muted);font-size:0.9rem;">
+        IF зарплата поступает → перевести 10% в Space «Накопления». IF трата > €50 → округлить до €10, сдачу в Space. IF остаток на счёте > €500 в конце месяца → перевести излишек в Space. Простые условия без ML.
+        </p>
+      </div>
+      <div class="card">
+        <strong>RoundUps + Spaces</strong>
+        <p style="margin-top:6px;color:var(--fg-muted);font-size:0.9rem;">
+        Округление до ближайшего евро, сдача в Space. Можно настроить ×2/×5/×10 множитель. Например: покупка на €4.30 → округление до €5.00, €0.70 в Space. С ×5 множителем → €3.50 в Space.
+        </p>
+      </div>
+    </div>
+
+    <h3>Ally Bank — Buckets + Boosters</h3>
+    <div class="card-grid">
+      <div class="card">
+        <strong>Savings Buckets — до 30 целей</strong>
+        <p style="margin-top:6px;color:var(--fg-muted);font-size:0.9rem;">
+        Одна Savings Account → до 30 Bucket-ов: «Отпуск», «Аварийный фонд», «Машина». Каждый Bucket: целевая сумма + дата. Все Bucket-ы на одном балансе с процентами. Визуализация прогресса.
+        </p>
+      </div>
+      <div class="card">
+        <strong>Surprise Savings Booster</strong>
+        <p style="margin-top:6px;color:var(--fg-muted);font-size:0.9rem;">
+        AI анализирует траты и незаметно переводит «безопасный излишек» в Bucket. Например: обычная трата на кофе $4.50, но на счёте привычный остаток → переводит $5 в Savings. Пользователь не замечает, но копит.
+        </p>
+      </div>
+      <div class="card">
+        <strong>Round-Up Booster</strong>
+        <p style="margin-top:6px;color:var(--fg-muted);font-size:0.9rem;">
+        Округление покупок до ближайшего доллара, сдача в Bucket. Можно настроить минимальный порог. Например: не округлять покупки < $5. Средняя экономия: $30-50/мес без усилий.
+        </p>
+      </div>
+      <div class="card">
+        <strong>Spending Buckets</strong>
+        <p style="margin-top:6px;color:var(--fg-muted);font-size:0.9rem;">
+        Spending Account → Bucket-ы для регулярных трат: «Аренда», «Коммуналка», «Продукты». Привязка торговцев к Bucket: все траты в Walmart → Bucket «Продукты». Автоматическая категоризация + ручная коррекция.
+        </p>
+      </div>
+    </div>
+
+    <h3>YNAB — Zero-Based Budgeting (правила, не ML)</h3>
+    <div class="card-grid">
+      <div class="card">
+        <strong>Правило 1: Каждому доллару — работа</strong>
+        <p style="margin-top:6px;color:var(--fg-muted);font-size:0.9rem;">
+        При поступлении дохода — распределить ВСЕ деньги по категориям до нуля. Нет «свободных» денег. Категории: Giving, Savings, Debt Payments, Recurring Bills, Everyday Expenses. 6-8 мастер-категорий.
+        </p>
+      </div>
+      <div class="card">
+        <strong>Правило 2: Примите реальные расходы</strong>
+        <p style="margin-top:6px;color:var(--fg-muted);font-size:0.9rem;">
+        Нерегулярные, но предсказуемые траты → ежемесячные цели. Например: автостраховка $1200/год → $100/мес в категорию. Рождество → $50/мес с января. Нет сюрпризов, нет долгов.
+        </p>
+      </div>
+      <div class="card">
+        <strong>Правило 3: Адаптируйтесь</strong>
+        <p style="margin-top:6px;color:var(--fg-muted);font-size:0.9rem;">
+        Перераспределение между категориями при перерасходе. Например: перерасход в «Еде» → перенести из «Развлечений». НЕ наказывает, а учит гибкости. Roll with the punches = главный UX-принцип.
+        </p>
+      </div>
+      <div class="card">
+        <strong>Правило 4: Состарьте деньги</strong>
+        <p style="margin-top:6px;color:var(--fg-muted);font-size:0.9rem;">
+        Цель: тратить деньги, которым минимум 30 дней. Избегать paycheck-to-paycheck. Метрика «Age of Money» — средний возраст потраченных денег. > 30 дней = финансовая стабильность.
+        </p>
+      </div>
+    </div>
+
+    <div class="callout callout-good">
+      <strong>Ключевой инсайт:</strong> Все успешные PFM-системы начинаются с <strong>правил и категорий</strong>, а не с ML. YNAB ($600 сбережений за 2 месяца, ~$6K за год) построен на 4 простых правилах. Monzo Trends — бесплатно для всех. Starling Spaces — простые цифровые конверты. <strong>Правила работают без данных, работают сразу, понятны пользователю.</strong>
+    </div>
+
+  </div>
+</div>
+
+<div class="section">
+  <div class="container">
+
+    <!-- Section 2: Rule-Based Engine -->
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <h2>Rule-Based Offer Engine для «Финансового Аналитика»</h2>
+    </div>
+
+    <h3>Концепция</h3>
+    <p>Rule-Based Offer Engine — это слой между категоризацией транзакций и банковскими продуктами. Он не использует ML/AI, а оперирует <strong>условиями</strong> (IF) на основе данных аналитика: категории трат, суммы, частоты, паттерны, сравнения с прошлым периодом.</p>
+
+    <div class="callout">
+      <strong>Принцип:</strong> Каждый совет = триггер (условие) + контекст (данные аналитика) + offer (банковский продукт). Пользователь видит не абстрактный «совет», а конкретное действие с продуктом Компаньона.
+    </div>
+
+    <h3>Категории и подкатегории трат (таксономия для Кыргызстана)</h3>
+
+    <pre style="font-size:0.78rem;">
+# Дерево категорий — 4 уровня глубины
+
+Еда и напитки
+├── Продукты
+│   ├── Супермаркеты          # Narodny, Globus, Frunze
+│   ├── Рынки                 # Ошский, Дордой
+│   └── Онлайн-продукты       # Instamart, Zakaz
+├── Кафе и рестораны
+│   ├── Фастфуд               # KFC, Burger King, Roko
+│   ├── Кофейни               # Skovoroda, Sierra
+│   └── Рестораны             # Navat, Frunze
+├── Доставка еды
+│   ├── Yandex Eats
+│   ├── Wolt
+│   └── Glovo
+
+Транспорт
+├── Общественный
+│   ├── Маршрутки
+│   ├── Такси                 # Yandex Go, Namba
+│   └── Автобусы
+├── Личный
+│   ├── Бензин                # Gazprom, Petromar
+│   ├── Автосервис
+│   └── Парковка
+├── Поездки
+│   ├── Авиабилеты            # Aviata, BiletyPlus
+│   ├── Ж/д билеты
+│   └── Международные
+
+Коммунальные услуги
+├── Электричество             # NESK
+├── Вода                      # Bishkek Suu
+├── Газ
+├── Отопление
+├── Интернет                  # SaimaNet, MegaLine
+├── Мобильная связь           # Beeline, MegaCom, O!
+└── Квартплата
+
+Здоровье
+├── Аптеки                    # Doctor, Pluspharm
+├── Клиники
+├── Стоматология
+└── Спортзалы                 # World Class, Central
+
+Образование
+├── Курсы и тренинги
+├── Школа/университет
+├── Книги
+└── Онлайн-курсы
+
+Развлечения
+├── Стриминг                  # Netflix, Spotify, YouTube Premium
+├── Игры                      # Steam, PlayStation Store
+├── Кино и театр
+├── Путешествия
+└── Хобби
+
+Шоппинг
+├── Одежда и обувь
+├── Электроника               # Belyi Veter, Sulpak
+├── Косметика
+├── Дом и сад
+└── Детские товары
+
+Финансовые услуги
+├── Переводы
+├── Комиссии
+├── Страховка
+└── Инвестиции
+
+Доходы
+├── Зарплата
+├── Фриланс
+├── Переводы от людей
+└── Кешбэк
+
+Другое
+├── Подписки (прочие)
+├── Благотворительность
+└── Неопределённые
+</pre>
+
+    <h3>Rule Engine — архитектура</h3>
+
+    <pre style="font-size:0.78rem;">
+# Архитектура Rule-Based Offer Engine
+
+┌─────────────────────────────────────────────────────────────┐
+│                    Transaction Stream                        │
+│              (PostgreSQL + LISTEN/NOTIFY)                   │
+└──────────────────┬──────────────────────────────────────────┘
+                   │
+┌──────────────────▼──────────────────────────────────────────┐
+│                    Categorizer                               │
+│         (Rules → pgvector → fallback)                       │
+└──────────────────┬──────────────────────────────────────────┘
+                   │ {category, amount, merchant, date, user_id}
+┌──────────────────▼──────────────────────────────────────────┐
+│              Rule Evaluation Engine                          │
+│    (YARA-like conditions on transaction + user profile)     │
+│                                                             │
+│  IF condition_met THEN                                      │
+│    produce_contextual_data()                                │
+│    match_offers(rules[].offers)                             │
+│    filter_already_shown()                                   │
+│    rank_by_priority()                                       │
+│    emit_notification_or_inapp_card()                        │
+└──────────────────┬──────────────────────────────────────────┘
+                   │
+    ┌──────────────┼──────────────┐
+    │              │              │
+┌───▼───┐   ┌────▼────┐   ┌─────▼─────┐
+│ Push  │   │ In-App  │   │  Analytics  │
+│ FCM   │   │ Card    │   │  (event log)│
+└───────┘   └─────────┘   └───────────┘
+</pre>
+
+    <h3>Формат правила (Rule Definition)</h3>
+
+    <pre style="font-size:0.78rem;">
+# rule-definition.yaml — пример правила
+
+rule_id: "transport_to_deposit"
+name: "Транспорт → Депозит"
+priority: 80
+category: "cross_sell"
+enabled: true
+
+# Триггер: условия срабатывания
+trigger:
+  type: "threshold"           # threshold | pattern | comparison | recurring
+  conditions:
+    - field: "category"
+      operator: "in"
+      value: ["Транспорт.Общественный.Такси", "Транспорт.Личный.Бензин"]
+    - field: "monthly_total"
+      operator: ">"
+      value: 15000              # 15 000 сомов/мес
+      unit: "KGS"
+    - field: "period"
+      operator: "=="
+      value: "current_month"
+
+# Контекст: что показываем пользователю
+context:
+  insight_template: |
+    Вы тратите {{monthly_total}} сом/мес на {{category_name}}.
+    За год это {{annual_projection}} сом.
+    Если откладывать 20% — {{potential_savings}}/мес.
+  data_points:
+    - monthly_total
+    - annual_projection
+    - potential_savings
+    - comparison_to_last_month
+
+# Offer: что предлагаем
+offer:
+  product_id: "deposit_muraz"   # Банковский продукт Компаньона
+  product_name: "Депозит «Мураз»"
+  offer_template: |
+    Открыть депозит «Мураз» на 13% годовых?
+    Автопополнение: {{suggested_auto_amount}} сом/мес.
+    За год: +{{projected_interest}} сом.
+  cta: "Открыть за 1 минуту"
+  deeplink: "kompanion://deposits/open?type=muraz&auto={{suggested_auto_amount}}"
+  conditions:
+    - user.kyc_status == "verified"
+    - user.no_active_deposit_of_type("muraz")
+
+# Ограничения показа
+constraints:
+  max_shows_per_user: 3
+  cooldown_days: 14              # Не показывать чаще 1 раза в 14 дней
+  time_window: "09:00-20:00"    # Только днём
+  channel: ["in_app", "push"]    # Где показывать
+  require_min_transactions: 5    # Минимум 5 транзакций в категории
+
+# Метрики для оценки
+success_metric:
+  type: "conversion"            # conversion | engagement | dismiss
+  target: 0.05                  # 5% конверсия = успех
+  tracking:
+    - event: "offer_shown"
+    - event: "offer_tapped"
+    - event: "offer_converted"
+    - event: "offer_dismissed"
+</pre>
+
+    <h3>Каталог правил (Rule Library) — привязка к продуктам Компаньона</h3>
+
+    <h4>Правило 1: Транспорт → Депозит</h4>
+    <div class="rule-box">
+      <div class="rule-title">Транспорт → Депозит «Мураз»</div>
+      <div class="rule-meta">rule_id: transport_to_deposit | priority: 80 | category: cross_sell</div>
+      <table>
+        <tr><th>Элемент</th><th>Значение</th></tr>
+        <tr><td>Условие</td><td>Траты на Такси/Бензин > 15 000 сом/мес, ≥ 5 транзакций</td></tr>
+        <tr><td>Контекст</td><td>«Вы тратите 18 400 сом/мес на такси. За год — 220 800 сом»</td></tr>
+        <tr><td>Offer</td><td>Открыть депозит «Мураз» 13%, автопополнение 3000/мес → +4680 сом/год</td></tr>
+        <tr><td>CTA</td><td>«Открыть за 1 минуту» → deeplink в депозиты</td></tr>
+        <tr><td>Продукт</td><td>Депозит «Мураз» (до 13% годовых)</td></tr>
+        <tr><td>Ограничения</td><td>Max 3 показа, cooldown 14 дней, 09:00–20:00</td></tr>
+      </table>
+    </div>
+
+    <h4>Правило 2: Крупные покупки → Рассрочка</h4>
+    <div class="rule-box">
+      <div class="rule-title">Электроника → Рассрочка</div>
+      <div class="rule-meta">rule_id: electronics_installment | priority: 90 | category: lending</div>
+      <table>
+        <tr><th>Элемент</th><th>Значение</th></tr>
+        <tr><td>Условие</td><td>1 транзакция > 30 000 сом в категории «Шоппинг.Электроника»</td></tr>
+        <tr><td>Контекст</td><td>«Покупка 45 000 сом в Belyi Veter. Разбить на рассрочку?»</td></tr>
+        <tr><td>Offer</td><td>Рассрочка 0% на 3/6 месяцев. Платёж: 7500/мес (вместо 45 000 сразу)</td></tr>
+        <tr><td>CTA</td><td>«Оформить рассрочку» → форма в приложении</td></tr>
+        <tr><td>Продукт</td><td>Рассрочка Компаньон (онлайн-заявка)</td></tr>
+        <tr><td>Ограничения</td><td>Показать в течение 24 часов после покупки, max 1 раз</td></tr>
+      </table>
+    </div>
+
+    <h4>Правило 3: Зарплата → Автонакопление</h4>
+    <div class="rule-box">
+      <div class="rule-title">Зарплата → Автоперевод на депозит</div>
+      <div class="rule-meta">rule_id: salary_auto_save | priority: 70 | category: savings</div>
+      <table>
+        <tr><th>Элемент</th><th>Значение</th></tr>
+        <tr><td>Условие</td><td>Входящий перевод с пометкой «зарплата» > 30 000 сом</td></tr>
+        <tr><td>Контекст</td><td>«Зачислена зарплата 55 000 сом. 10% = 5500 сом → на депозит»</td></tr>
+        <tr><td>Offer</td><td>Автоперевод 10% зарплаты на депозит «Мураз». Настроить?</td></tr>
+        <tr><td>CTA</td><td>«Настроить автоперевод» → экран шаблонов</td></tr>
+        <tr><td>Продукт</td><td>Шаблон перевода + Депозит «Мураз»</td></tr>
+        <tr><td>Ограничения</td><td>Только в день поступления зарплаты, max 1 раз/мес</td></tr>
+      </table>
+    </div>
+
+    <h4>Правило 4: Коммуналка → Шаблон оплаты</h4>
+    <div class="rule-box">
+      <div class="rule-title">Коммуналка → Создать шаблон</div>
+      <div class="rule-meta">rule_id: utilities_template | priority: 60 | category: convenience</div>
+      <table>
+        <tr><th>Элемент</th><th>Значение</th></tr>
+        <tr><td>Условие</td><td>3+ платежа одному провайдеру (NESK, SaimaNet) с интервалом 25-35 дней</td></tr>
+        <tr><td>Контекст</td><td>«Вы 3 месяца подряд платите за свет ~1200 сом. Создать шаблон?»</td></tr>
+        <tr><td>Offer</td><td>Создать шаблон «Электричество» с автонапоминанием за 3 дня до даты</td></tr>
+        <tr><td>CTA</td><td>«Создать шаблон» → экран шаблонов</td></tr>
+        <tr><td>Продукт</td><td>Шаблоны платежей Компаньон</td></tr>
+        <tr><td>Ограничения</td><td>Показать после 3-го платежа, max 1 раз на провайдера</td></tr>
+      </table>
+    </div>
+
+    <h4>Правило 5: Подписки → Объединение</h4>
+    <div class="rule-box">
+      <div class="rule-title">Подписки → Трекер + оптимизация</div>
+      <div class="rule-meta">rule_id: subscription_tracker | priority: 65 | category: optimization</div>
+      <table>
+        <tr><th>Элемент</th><th>Значение</th></tr>
+        <tr><td>Условие</td><td>≥ 3 регулярных списания с интервалом 25-35 дней, сумма > 2000 сом/мес</td></tr>
+        <tr><td>Контекст</td><td>«У вас 5 подписок на 4200 сом/мес: Netflix (800), Spotify (450), YouTube (650)...»</td></tr>
+        <tr><td>Offer</td><td>«Вы не смотрели Netflix 2 месяца. Приостановить?» или «Перейти на семейный тариф Spotify — экономия 200/мес»</td></tr>
+        <tr><td>CTA</td><td>«Управлять подписками» → экран трекера</td></tr>
+        <tr><td>Продукт</td><td>Внутренний трекер подписок (новая фича)</td></tr>
+        <tr><td>Ограничения</td><td>Показать после 3-го обнаружения подписки, max 1 раз/месяц</td></tr>
+      </table>
+    </div>
+
+    <h4>Правило 6: Переводы за границу → Visa Gold</h4>
+    <div class="rule-box">
+      <div class="rule-title">Частые переводы → Премиальная карта</div>
+      <div class="rule-meta">rule_id: transfers_visa_gold | priority: 75 | category: cross_sell</div>
+      <table>
+        <tr><th>Элемент</th><th>Значение</th></tr>
+        <tr><td>Условие</td><td>≥ 3 перевода в Россию/Казахстан/Узбекистан за месяц, сумма > 20 000 сом</td></tr>
+        <tr><td>Контекст</td><td>«Вы перевели 65 000 сом в Россию за месяц. Комиссия: 1300 сом»</td></tr>
+        <tr><td>Offer</td><td>«Visa Gold: кешбэк 20% на переводы + 0% комиссия. Оформить?»</td></tr>
+        <tr><td>CTA</td><td>«Оформить Visa Gold» → форма заказа карты</td></tr>
+        <tr><td>Продукт</td><td>Visa Gold (кешбэк до 20%)</td></tr>
+        <tr><td>Ограничения</td><td>Показать после 3-го перевода, max 2 раза/мес, только если нет Visa Gold</td></tr>
+      </table>
+    </div>
+
+    <h4>Правило 7: Низкий баланс → Микрозайм</h4>
+    <div class="rule-box">
+      <div class="rule-title">Баланс < 5000 → Микрозайм</div>
+      <div class="rule-meta">rule_id: low_balance_microloan | priority: 95 | category: lending</div>
+      <table>
+        <tr><th>Элемент</th><th>Значение</th></tr>
+        <tr><td>Условие</td><td>Баланс < 5000 сом, предстоящие платежи > балансу, до зарплаты > 7 дней</td></tr>
+        <tr><td>Контекст</td><td>«Баланс 3200 сом. Предстоящие: интернет 1200, коммуналка 3500. До зарплаты 12 дней»</td></tr>
+        <tr><td>Offer</td><td>«Микрозайм 20 000 сом на 14 дней, ставка 0.5%/день. Одобрение за 5 минут»</td></tr>
+        <tr><td>CTA</td><td>«Взять займ» → форма онлайн-займа</td></tr>
+        <tr><td>Продукт</td><td>Онлайн-займ Компаньон (до 200 000 KGS)</td></tr>
+        <tr><td>Ограничения</td><td>Max 1 раз за 7 дней, только если нет просрочек</td></tr>
+      </table>
+    </div>
+
+    <h4>Правило 8: Крупная сумма на счёте → Депозит</h4>
+    <div class="rule-box">
+      <div class="rule-title">Излишек на счёте → Депозит</div>
+      <div class="rule-meta">rule_id: excess_to_deposit | priority: 85 | category: cross_sell</div>
+      <table>
+        <tr><th>Элемент</th><th>Значение</th></tr>
+        <tr><td>Условие</td><td>Баланс текущего > 50 000 сом, средний баланс за 3 мес > 40 000, нет активного депозита</td></tr>
+        <tr><td>Контекст</td><td>«На счёте 72 000 сом. За 3 месяца средний баланс 48 000. Деньги не работают»</td></tr>
+        <tr><td>Offer</td><td>«Открыть депозит «Мураз» на 13%. 50 000 сом → +6500/год. Забрать через 12 мес»</td></tr>
+        <tr><td>CTA</td><td>«Открыть депозит» → экран депозитов</td></tr>
+        <tr><td>Продукт</td><td>Депозит «Мураз»</td></tr>
+        <tr><td>Ограничения</td><td>Max 1 раз/месяц, только если нет депозита, KYC verified</td></tr>
+      </table>
+    </div>
+
+    <h4>Правило 9: Регулярные траты в одном месте → Кешбэк</h4>
+    <div class="rule-box">
+      <div class="rule-title">Лояльность к ритейлеру → Кешбэк-активация</div>
+      <div class="rule-meta">rule_id: merchant_loyalty_cashback | priority: 55 | category: engagement</div>
+      <table>
+        <tr><th>Элемент</th><th>Значение</th></tr>
+        <tr><td>Условие</td><td>≥ 5 транзакций у одного торговца (McDonald's, KFC) за месяц, сумма > 8000 сом</td></tr>
+        <tr><td>Контекст</td><td>«Вы тратите 9500/мес в KFC. Активируйте кешбэк 10% на фастфуд»</td></tr>
+        <tr><td>Offer</td><td>«Активировать категорию «Фастфуд» в кешбэке. Возврат 10% → экономия 950/мес»</td></tr>
+        <tr><td>CTA</td><td>«Активировать» → экран кешбэк-категорий</td></tr>
+        <tr><td>Продукт</td><td>Кешбэк Visa Gold (до 20%)</td></tr>
+        <tr><td>Ограничения</td><td>Max 1 раз на торговца/месяц</td></tr>
+      </table>
+    </div>
+
+    <h4>Правило 10: Образование → Кредит на обучение</h4>
+    <div class="rule-box">
+      <div class="rule-title">Траты на образование → Целевой кредит</div>
+      <div class="rule-meta">rule_id: education_loan | priority: 60 | category: lending</div>
+      <table>
+        <tr><th>Элемент</th><th>Значение</th></tr>
+        <tr><td>Условие</td><td>Транзакция > 20 000 сом в категории «Образование.Курсы и тренинги»</td></tr>
+        <tr><td>Контекст</td><td>«Оплата курса Codify 25 000 сом. Разбить на 6 месяцев?»</td></tr>
+        <tr><td>Offer</td><td>«Образовательный кредит: 0% на 6 мес, затем 18%/год. Платёж 4167/мес»</td></tr>
+        <tr><td>CTA</td><td>«Оформить кредит» → форма</td></tr>
+        <tr><td>Продукт</td><td>Кредит «Образование» (если есть) или стандартный онлайн-займ</td></tr>
+        <tr><td>Ограничения</td><td>В течение 48 часов после транзакции, max 1 раз</td></tr>
+      </table>
+    </div>
+
+    <h3>Типы триггеров (Trigger Types)</h3>
+
+    <table>
+      <tr><th>Тип</th><th>Описание</th><th>Пример</th></tr>
+      <tr><td><code>threshold</code></td><td>Порог по сумме/количеству</td><td>Траты на такси > 15 000/мес</td></tr>
+      <tr><td><code>pattern</code></td><td>Повторяющийся паттерн</td><td>3+ платежа одному провайдеру с интервалом 25-35 дней</td></tr>
+      <tr><td><code>comparison</code></td><td>Сравнение с прошлым периодом</td><td>Траты на еду выросли на 30% vs прошлый месяц</td></tr>
+      <tr><td><code>recurring</code></td><td>Регулярное событие</td><td>Поступление зарплаты каждые 30 дней</td></tr>
+      <tr><td><code>anomaly</code></td><td>Аномалия в паттерне</td><td>Транзакция в 3× больше среднего в категории</td></tr>
+      <tr><td><code>lifecycle</code></td><td>Жизненный цикл пользователя</td><td>30 дней после регистрации, нет депозита</td></tr>
+      <tr><td><code>time</code></td><td>Временной триггер</td><td>1-го числа каждого месяца, 09:00</td></tr>
+    </table>
+
+    <h3>Операторы для условий</h3>
+
+    <table>
+      <tr><th>Оператор</th><th>Описание</th><th>Пример</th></tr>
+      <tr><td><code>==</code></td><td>Равно</td><td><code>category == "Транспорт.Такси"</code></td></tr>
+      <tr><td><code>!=</code></td><td>Не равно</td><td><code>merchant != "Bank Kompanion"</code></td></tr>
+      <tr><td><code>&gt;</code> / <code>&lt;</code></td><td>Больше / меньше</td><td><code>amount > 30000</code></td></tr>
+      <tr><td><code>in</code></td><td>Содержится в списке</td><td><code>category in ["Такси", "Бензин"]</code></td></tr>
+      <tr><td><code>between</code></td><td>В диапазоне</td><td><code>amount between 10000 and 50000</code></td></tr>
+      <tr><td><code>contains</code></td><td>Содержит подстроку</td><td><code>description contains "SaimaNet"</code></td></tr>
+      <tr><td><code>regex</code></td><td>Регулярное выражение</td><td><code>description regex "^POS.*KFC"</code></td></tr>
+      <tr><td><code>count</code></td><td>Количество за период</td><td><code>count(category) >= 5 per month</code></td></tr>
+      <tr><td><code>sum</code></td><td>Сумма за период</td><td><code>sum(category) > 15000 per month</code></td></tr>
+      <tr><td><code>avg</code></td><td>Среднее за период</td><td><code>avg(amount) > 5000 per week</code></td></tr>
+      <tr><td><code>change_pct</code></td><td>Изменение в %</td><td><code>change_pct(monthly_spend) > 30</code></td></tr>
+      <tr><td><code>days_since</code></td><td>Дней с события</td><td><code>days_since(last_salary) > 25</code></td></tr>
+      <tr><td><code>exists</code></td><td>Существует ли продукт</td><td><code>exists(deposit) == false</code></td></tr>
+    </table>
+
+    <h3>Жизненный цикл правила (Rule Lifecycle)</h3>
+
+    <pre style="font-size:0.78rem;">
+# rule-lifecycle.yaml
+
+status: draft          # draft → review → active → paused → archived
+version: 1
+author: "product_team"
+reviewers: ["compliance", "risk"]
+
+draft:
+  - Написать rule definition
+  - Пройти compliance review ( explainability, fairness )
+  - Пройти risk review ( financial risk, reputational risk )
+
+review:
+  - Staging environment: 100 тестовых пользователей
+  - Метрики: show rate, tap rate, conversion rate, dismiss rate
+  - Если conversion < target → доработка
+
+active:
+  - 10% пользователей → 50% → 100%
+  - Ежедневный мониторинг метрик
+  - Auto-pause если conversion < 0.5% за 7 дней
+
+paused:
+  - Ручная пауза или auto-pause по метрикам
+  - Root cause analysis
+  - Редактирование и повторный review
+
+archived:
+  - Правило устарело или заменено
+  - Сохраняется для audit trail
+</pre>
+
+    <h3>Очередь приоритетов (Offer Ranking)</h3>
+
+    <p>Когда срабатывает несколько правил одновременно — нужен ranking:</p>
+
+    <pre style="font-size:0.78rem;">
+# ranking-algorithm
+
+score = (
+  rule.priority * 0.3 +           # Приоритет правила (0-100)
+  user.receptivity_score * 0.2 +   # История отклика на эту категорию (0-1)
+  product.margin * 0.15 +         # Маржа продукта для банка
+  timeliness * 0.2 +              # Актуальность (зарплата = высокая)
+  freshness * 0.15                # Новизна (не показывали раньше)
+)
+
+# Hard constraints (фильтрация ДО scoring):
+# - user.already_has_product → исключить
+# - user.kyc_status != "verified" → исключить lending продукты
+# - user.cooldown_active(rule_id) → исключить
+# - time.now not in rule.time_window → исключить
+# - channel not in user.preferred_channels → исключить
+
+# Soft constraints (понижение score):
+# - Показывали похожее правило за последние 7 дней → score *= 0.5
+# - Пользователь dismiss-ил эту категорию 3+ раз → score *= 0.3
+</pre>
+
+    <h3>Схема базы данных для Rule Engine</h3>
+
+    <pre style="font-size:0.78rem;">
+-- Таблица правил
+CREATE TABLE rules (
+    rule_id VARCHAR(64) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    priority INT NOT NULL DEFAULT 50,
+    category VARCHAR(64),              -- cross_sell | lending | savings | convenience
+    trigger_config JSONB NOT NULL,     -- условия срабатывания
+    context_config JSONB NOT NULL,     -- шаблоны контекста
+    offer_config JSONB NOT NULL,       -- конфигурация offer-а
+    constraints_config JSONB NOT NULL, -- ограничения показа
+    status VARCHAR(32) DEFAULT 'draft', -- draft | review | active | paused | archived
+    version INT DEFAULT 1,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Таблица показов офферов (audit trail)
+CREATE TABLE offer_events (
+    event_id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    rule_id VARCHAR(64) NOT NULL REFERENCES rules(rule_id),
+    event_type VARCHAR(32) NOT NULL,     -- shown | tapped | converted | dismissed | expired
+    context_data JSONB,                 -- заменённые переменные в шаблоне
+    channel VARCHAR(32),                -- in_app | push | sms
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Индексы для аналитики
+CREATE INDEX idx_offer_events_user_rule ON offer_events(user_id, rule_id, event_type);
+CREATE INDEX idx_offer_events_created ON offer_events(created_at);
+CREATE INDEX idx_rules_status ON rules(status);
+
+-- Materialized view: конверсия по правилам
+CREATE MATERIALIZED VIEW rule_conversion_stats AS
+SELECT
+    rule_id,
+    COUNT(*) FILTER (WHERE event_type = 'shown') as shows,
+    COUNT(*) FILTER (WHERE event_type = 'tapped') as taps,
+    COUNT(*) FILTER (WHERE event_type = 'converted') as conversions,
+    ROUND(COUNT(*) FILTER (WHERE event_type = 'converted')::numeric /
+          NULLIF(COUNT(*) FILTER (WHERE event_type = 'shown'), 0) * 100, 2) as conversion_rate
+FROM offer_events
+WHERE created_at > NOW() - INTERVAL '30 days'
+GROUP BY rule_id;
+</pre>
+
+    <h3>API Rule Engine (псевдокод)</h3>
+
+    <pre style="font-size:0.78rem;">
+# Pseudo-Python для Rule Evaluation Engine
+
+class RuleEngine:
+    def __init__(self, db, user_profile_service):
+        self.db = db
+        self.profile = user_profile_service
+        self.active_rules = self.load_active_rules()
+
+    def on_transaction(self, transaction: Transaction):
+        """Главный entry point — вызывается при каждой транзакции"""
+
+        # 1. Категоризация (уже сделано до этого)
+        tx = self.enrich_transaction(transaction)
+
+        # 2. Обновить агрегаты пользователя
+        self.update_user_aggregates(tx.user_id, tx.category, tx.amount)
+
+        # 3. Оценить все активные правила
+        matched = []
+        for rule in self.active_rules:
+            if self.evaluate_rule(rule, tx):
+                matched.append(rule)
+
+        # 4. Rank и фильтрация
+        if matched:
+            best_offer = self.rank_offers(matched, tx.user_id)
+            if best_offer:
+                self.deliver_offer(best_offer, tx.user_id, tx)
+
+    def evaluate_rule(self, rule: Rule, tx: Transaction) -> bool:
+        """Проверяет ВСЕ условия правила"""
+        conditions = rule.trigger_config['conditions']
+
+        for cond in conditions:
+            field = cond['field']
+            op = cond['operator']
+            value = cond['value']
+
+            # Получить значение поля из транзакции или профиля
+            actual = self.resolve_field(field, tx)
+
+            if not self.apply_operator(actual, op, value):
+                return False  # ANY condition fails → rule doesn't match
+
+        # Все условия прошли → проверить ограничения
+        return self.check_constraints(rule, tx.user_id)
+
+    def check_constraints(self, rule: Rule, user_id: int) -> bool:
+        """Hard constraints — must ALL pass"""
+        c = rule.constraints_config
+
+        # Max shows
+        shows = self.db.count(f"""
+            SELECT COUNT(*) FROM offer_events
+            WHERE user_id = {user_id}
+            AND rule_id = '{rule.rule_id}'
+            AND event_type = 'shown'
+            AND created_at > NOW() - INTERVAL '{c.get('cooldown_days', 30)} days'
+        """)
+        if shows >= c.get('max_shows_per_user', 999):
+            return False
+
+        # Time window
+        if c.get('time_window'):
+            if not self.in_time_window(c['time_window']):
+                return False
+
+        # Product already owned
+        if c.get('product_id'):
+            if self.profile.has_product(user_id, c['product_id']):
+                return False
+
+        # KYC for lending
+        if rule.category == 'lending':
+            if self.profile.kyc_status(user_id) != 'verified':
+                return False
+
+        return True
+
+    def deliver_offer(self, rule: Rule, user_id: int, tx: Transaction):
+        """Доставка offer-а в нужный канал"""
+        context = self.build_context(rule, tx)
+        channels = rule.constraints_config.get('channel', ['in_app'])
+
+        for channel in channels:
+            if channel == 'push' and self.profile.push_enabled(user_id):
+                self.send_push(rule, user_id, context)
+            elif channel == 'in_app':
+                self.queue_inapp_card(rule, user_id, context)
+
+        # Логирование
+        self.log_event(rule.rule_id, user_id, 'shown', context, channel)
+</pre>
+
+    <h3>Отличие Rule-Based от AI-Based</h3>
+
+    <table>
+      <tr><th>Аспект</th><th>Rule-Based</th><th>AI-Based</th></tr>
+      <tr><td>Скорость разработки</td><td>1–2 недели на правило</td><td>2–4 месяца на MVP</td></tr>
+      <tr><td>Требования к данным</td><td>Минимальные — rules работают сразу</td><td>Нужны тысячи примеров</td></tr>
+      <tr><td>Прозрачность</td><td>100% — каждое решение объяснимо</td><td>Black box, нужен explainability</td></tr>
+      <tr><td>Гибкость</td><td>Нужно писать новое правило</td><td>Адаптируется автоматически</td></tr>
+      <tr><td>Сложность edge cases</td><td>Комбинаторный взрыв правил</td><td>ML обобщает edge cases</td></tr>
+      <tr><td>Регуляторика</td><td>Audit trail тривиальный</td><td>Сложнее доказать fairness</td></tr>
+      <tr><td>Personalization depth</td><td>Сегментная (buckets)</td><td>Индивидуальная (segment-of-one)</td></tr>
+      <tr><td>Стоимость</td><td>Дёшево — CPU only</td><td>Дорого — GPU + ML infra</td></tr>
+      <tr><td>Рекомендация для Компаньона</td><td><strong>Начать здесь</strong></td><td>Фаза 2+</td></tr>
+    </table>
+
+    <div class="callout callout-good">
+      <strong>Рекомендация:</strong> Начать с <strong>10–15 rule-based офферов</strong>, покрывающих 80% сценариев. Это даст immediate value, создаст data foundation для будущего ML, и позволит product team управлять офферами без разработчиков. AI/ML добавить во Фазе 2 для edge cases и hyper-personalization.
+    </div>
+
+  </div>
+</div>
+
+<div class="footer">
+  <div class="container">
+    <p>Дополнение к ресерчу «Персонализированные финансовые советы в МП банка Компаньон»</p>
+    <p style="margin-top:8px;font-size:0.75rem;">Источники: Revolut AIR, Monzo Trends/Targets, Starling Spaces/Spending Intelligence, N26 Insights/Rules, Ally Buckets/Boosters, YNAB Four Rules, Personetics, Latinia RTD, Zafin Offer Management, FinGoal, APICA</p>
+  </div>
+</div>
+
+</body>
+</html>
