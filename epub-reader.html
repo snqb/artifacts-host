@@ -935,9 +935,11 @@ Markdown поддерживается:
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
         const imgs = tempDiv.querySelectorAll('img[src]');
+        console.log('Chapter', chapterPath, '- images found:', imgs.length);
         for (const img of imgs) {
           const src = img.getAttribute('src');
           if (!src || src.startsWith('data:')) continue;
+          console.log('  Image src:', src, '→ resolved to:', opfDir + src);
           try {
             // Resolve relative path from chapter directory
             const chapterDir = chapterPath.includes('/') ? chapterPath.substring(0, chapterPath.lastIndexOf('/') + 1) : '';
@@ -957,6 +959,7 @@ Markdown поддерживается:
               imgPath = chapterDir + src;
             }
             // Also try just the filename
+            console.log('  Looking for:', imgPath, 'or', src, '→ found:', !!(zip.file(imgPath) || zip.file(src)));
             const imgFile = zip.file(imgPath) || zip.file(src);
             if (imgFile) {
               const ext = src.split('.').pop().toLowerCase();
@@ -967,6 +970,7 @@ Markdown поддерживается:
           } catch(e) { console.warn('Failed to inline image:', src, e); }
         }
         html = tempDiv.innerHTML;
+        console.log('Chapter images inlined:', tempDiv.querySelectorAll('img[data:'), 'remaining broken:', tempDiv.querySelectorAll('img:not([src^="data:"])').length);
         
         // Add chapter separator
         return '<hr class="chapter-break">' + html;
