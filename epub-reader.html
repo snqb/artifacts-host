@@ -261,16 +261,16 @@
       font-size: inherit;
     }
     .book-columns::-webkit-scrollbar { display: none; }
-    /* MOBILE: vertical scroll, one column, snap to headings */
+    /* MOBILE: vertical scroll, no CSS columns — just smooth reading */
     @media (max-width: 699px) {
       .book-columns {
-        column-count: 1;
+        column-count: auto;
         column-width: auto;
-        column-gap: 0;
+        column-gap: normal;
         overflow-y: auto;
         overflow-x: hidden;
-        scroll-snap-type: y proximity;
-        padding: 24px 24px;
+        padding: 24px;
+        max-width: 100%;
       }
     }
     /* DESKTOP: horizontal columns, snap column-to-column */
@@ -334,11 +334,7 @@
     }
     .book-columns th { background: rgba(128,128,128,0.05); font-weight: 600; }
     .book-columns hr { border: none; border-top: 1px solid var(--border); margin: 1em 0; }
-    @media (max-width: 699px) {
-      .book-columns h1, .book-columns h2, .book-columns hr.chapter-break {
-        scroll-snap-align: start;
-      }
-    }
+
     .chapter-break {
       break-before: column;
       border: none;
