@@ -671,16 +671,60 @@ Markdown поддерживается:
     // ===== DOM =====
     const $ = id => document.getElementById(id);
     
-    // ===== STORAGE =====
-    function loadBooks() {
-      try {
-        const data = localStorage.getItem('epubkg_books');
-        if (data) state.books = JSON.parse(data);
-      } catch(e) {}
+    // ===== STORAGE (IndexedDB for books, localStorage for settings) =====
+    let db = null;
+    function openDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open('epubkg', 1);
+        req.onupgradeneeded = e => {
+          const d = e.target.result;
+          if (!d.objectStoreNames.contains('books')) {
+            d.createObjectStore('books', { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = e => resolve(e.target.result);
+        req.onerror = e => reject(e.target.error);
+      });
     }
     
-    function saveBooks() {
-      localStorage.setItem('epubkg_books', JSON.stringify(state.books));
+    async function loadBooks() {
+      try {
+        if (!db) db = await openDB();
+        const tx = db.transaction('books', 'readonly');
+        const store = tx.objectStore('books');
+        return new Promise(resolve => {
+          const req = store.getAll();
+          req.onsuccess = () => {
+            state.books = req.result || [];
+            // Sort by addedAt desc
+            state.books.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+            resolve();
+          };
+          req.onerror = () => { state.books = []; resolve(); };
+        });
+      } catch(e) { state.books = []; }
+    }
+    
+    async function saveBooks() {
+      try {
+        if (!db) db = await openDB();
+        // Save all books — IndexedDB can handle it
+        const tx = db.transaction('books', 'readwrite');
+        const store = tx.objectStore('books');
+        for (const book of state.books) {
+          store.put(book);
+        }
+      } catch(e) {
+        console.warn('IndexedDB save failed:', e.message);
+      }
+    }
+    
+    async function deleteBookFromDB(id) {
+      try {
+        if (!db) db = await openDB();
+        const tx = db.transaction('books', 'readwrite');
+        tx.objectStore('books').delete(id);
+      } catch(e) {}
     }
     
     function loadSettings() {
@@ -962,7 +1006,7 @@ Markdown поддерживается:
       return { title, content: chapters.join('\n') };
     }
     
-    function addBook(title, content) {
+    async function addBook(title, content) {
       const id = 'book_' + Date.now().toString(36);
       const book = {
         id,
@@ -973,11 +1017,15 @@ Markdown поддерживается:
         addedAt: Date.now()
       };
       
-      // Keep max 20 books
       state.books.unshift(book);
-      if (state.books.length > 20) state.books = state.books.slice(0, 20);
+      // Keep max 20 books, delete old ones from DB
+      if (state.books.length > 20) {
+        const removed = state.books.slice(20);
+        state.books = state.books.slice(0, 20);
+        for (const r of removed) deleteBookFromDB(r.id);
+      }
       
-      saveBooks();
+      saveBooks(); // fire-and-forget async save to IndexedDB
       openBook(id);
     }
     
@@ -1365,7 +1413,7 @@ Markdown поддерживается:
     $('btn-preview').addEventListener('click', previewBook);
     
     // ===== INIT =====
-    loadBooks();
+    loadBooks().then(() => renderLibrary());
     loadSettings();
     document.body.dataset.theme = state.theme;
     $('font-size-val').textContent = state.fontSize;
