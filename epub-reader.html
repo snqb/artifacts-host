@@ -460,8 +460,21 @@ Markdown поддерживается:
       await new Promise(resolve => {
         const req = tx.objectStore(STORE_BOOKS).getAll();
         req.onsuccess = () => {
-          state.books = req.result || [];
-          state.books.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+          let books = req.result || [];
+          // Deduplicate by title — keep newest (highest addedAt), preserve best position
+          const seen = {};
+          books = books.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+          books = books.filter(b => {
+            const key = (b.title || '').trim();
+            if (seen[key]) {
+              // Merge: keep higher position
+              seen[key].position = Math.max(seen[key].position || 0, b.position || 0);
+              return false;
+            }
+            seen[key] = b;
+            return true;
+          });
+          state.books = books;
           resolve();
         };
         req.onerror = () => { state.books = []; resolve(); };
@@ -716,6 +729,18 @@ Markdown поддерживается:
   }
 
   async function addBook(title, content) {
+    // Check if book with same title already exists — update instead of duplicate
+    const existing = state.books.find(b => (b.title || '').trim() === (title || '').trim());
+    if (existing) {
+      existing.content = content;
+      existing.position = 0;
+      existing.totalWords = content.replace(/<[^>]*>/g, '').split(/\s+/).length;
+      existing.addedAt = Date.now();
+      saveBooks();
+      openBook(existing.id);
+      return;
+    }
+
     const book = {
       id: makeBookId(title),
       title, content,
