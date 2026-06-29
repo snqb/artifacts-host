@@ -375,6 +375,88 @@
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     
+    .author-textarea {
+      width: 100%;
+      max-width: 600px;
+      min-height: 300px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.5);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 1rem;
+      line-height: 1.6;
+      resize: vertical;
+    }
+    .author-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .author-input {
+      width: 100%;
+      max-width: 600px;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.5);
+      color: var(--text);
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+    .author-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .mode-btn {
+      padding: 10px 20px;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      background: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+      margin-top: 16px;
+    }
+    .mode-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .primary-btn {
+      padding: 12px 24px;
+      border-radius: 100px;
+      border: none;
+      background: var(--accent);
+      color: white;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .primary-btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+    .secondary-btn {
+      padding: 12px 24px;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      background: none;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .secondary-btn:hover {
+      border-color: var(--accent);
+    }
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 16px;
+    }
     /* Mobile adjustments */
     @media (max-width: 480px) {
       .page { font-size: 16px; padding: 16px 0; }
@@ -434,6 +516,30 @@
       <h3>Недавние</h3>
       <div id="library-list"></div>
     </div>
+    
+    <button class="mode-btn" id="btn-author-mode">✍️ Режим автора</button>
+  </div>
+  
+  <!-- Author Screen -->
+  <div id="author-screen" style="display: none; flex-direction: column; align-items: center; min-height: 100vh; padding: 24px;">
+    <div class="logo" style="font-size: 1.8rem;">EPUB.kg — Автор</div>
+    <div class="tagline">Напиши → Сохрани → Поделись</div>
+    
+    <input type="text" class="author-input" id="author-title" placeholder="Название книги">
+    <input type="text" class="author-input" id="author-author" placeholder="Имя автора (опционально)">
+    <textarea class="author-textarea" id="author-text" placeholder="Начни писать...
+
+Markdown поддерживается:
+# Заголовок
+**жирный** *курсив*
+
+Просто пиши, как в блокноте."></textarea>
+    
+    <div class="btn-row">
+      <button class="primary-btn" id="btn-publish">📖 Опубликовать</button>
+      <button class="secondary-btn" id="btn-preview">👁 Предпросмотр</button>
+    </div>
+    <button class="mode-btn" id="btn-reader-mode" style="margin-top: 24px;">← Назад к читалке</button>
   </div>
   
   <!-- Reader Screen -->
@@ -566,12 +672,6 @@
       }
       
       addBook(title, content);
-    }
-    
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
     }
     
     async function parseDocx(file) {
@@ -1169,14 +1269,131 @@
       }
     });
     
+    // ===== AUTHOR MODE =====
+    function showAuthor() {
+      $('upload-screen').style.display = 'none';
+      $('author-screen').style.display = 'flex';
+      $('author-text').focus();
+    }
+    
+    function showReader() {
+      $('author-screen').style.display = 'none';
+      $('upload-screen').style.display = 'flex';
+    }
+    
+    function publishBook() {
+      const title = $('author-title').value.trim() || 'Без названия';
+      const author = $('author-author').value.trim();
+      const text = $('author-text').value.trim();
+      
+      if (!text) {
+        showToast('Напиши хоть что-нибудь');
+        return;
+      }
+      
+      // Convert markdown to HTML
+      let html = marked.parse(text);
+      
+      // Add author info if present
+      if (author) {
+        html = `<p style="color: var(--text-secondary); font-style: italic; margin-bottom: 2em;">© ${escapeHtml(author)}</p>\n` + html;
+      }
+      
+      // Auto-export as self-contained HTML
+      exportEmbeddedBook(title, html, author);
+      
+      $('author-title').value = '';
+      $('author-author').value = '';
+      $('author-text').value = '';
+    }
+    
+    function exportEmbeddedBook(title, content, author) {
+      // Get current HTML source
+      const currentHtml = document.documentElement.outerHTML;
+      
+      // Create embedded book data
+      const bookData = {
+        t: title,
+        c: content,
+        a: author || '',
+        d: Date.now()
+      };
+      const jsonStr = JSON.stringify(bookData);
+      const base64 = btoa(unescape(encodeURIComponent(jsonStr)));
+      
+      // Inject embedded book script before closing </body>
+      const injection = `\n  <script>window.EMBEDDED_BOOK="${base64}";</script>`;
+      const newHtml = currentHtml.replace('</body>', injection + '\n</body>');
+      
+      // Create download
+      const blob = new Blob([newHtml], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = sanitizeFilename(title) + '.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      showToast('Книга экспортирована! HTML-файл с книгой внутри.');
+    }
+    
+    function sanitizeFilename(name) {
+      return name.replace(/[^a-zA-Zа-яА-Я0-9\-_ ]/g, '').replace(/\s+/g, '_').substring(0, 50);
+    }
+    
+    function previewBook() {
+      const text = $('author-text').value.trim();
+      if (!text) {
+        showToast('Нечего показывать — напиши текст');
+        return;
+      }
+      
+      const html = marked.parse(text);
+      const id = 'preview_' + Date.now();
+      state.books.unshift({
+        id,
+        title: $('author-title').value.trim() || 'Предпросмотр',
+        content: html,
+        position: 0,
+        totalWords: html.replace(/<[^>]*>/g, '').split(/\s+/).length,
+        addedAt: Date.now()
+      });
+      if (state.books.length > 20) state.books = state.books.slice(0, 20);
+      openBook(id);
+    }
+    
+    $('btn-author-mode').addEventListener('click', showAuthor);
+    $('btn-reader-mode').addEventListener('click', showReader);
+    $('btn-publish').addEventListener('click', publishBook);
+    $('btn-preview').addEventListener('click', previewBook);
+    
     // ===== INIT =====
     loadBooks();
     loadSettings();
     document.body.dataset.theme = state.theme;
     $('font-size-val').textContent = state.fontSize;
     
-    // Try to load book from URL first
-    if (!loadFromUrl()) {
+    // Try to load embedded book first (self-contained publication)
+    if (window.EMBEDDED_BOOK) {
+      try {
+        const json = decodeURIComponent(escape(atob(window.EMBEDDED_BOOK)));
+        const data = JSON.parse(json);
+        const id = 'embedded_' + Date.now();
+        state.books.unshift({
+          id,
+          title: data.t || 'Книга',
+          content: data.c || '',
+          position: 0,
+          totalWords: (data.c || '').replace(/<[^>]*>/g, '').split(/\s+/).length,
+          addedAt: Date.now()
+        });
+        if (state.books.length > 20) state.books = state.books.slice(0, 20);
+        openBook(id);
+        showToast('Книга загружена');
+      } catch(e) { console.error('Failed to load embedded book:', e); }
+    } else if (!loadFromUrl()) {
       renderLibrary();
     }
   </script>
