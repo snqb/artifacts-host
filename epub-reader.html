@@ -1214,34 +1214,22 @@ Markdown поддерживается:
     }
     
     function exportEmbeddedBook(title, content, author) {
-      // Get current HTML source
-      const currentHtml = document.documentElement.outerHTML;
-      
-      // Create embedded book data
-      const bookData = {
-        t: title,
-        c: content,
-        a: author || '',
-        d: Date.now()
-      };
-      const jsonStr = JSON.stringify(bookData);
-      const base64 = btoa(unescape(encodeURIComponent(jsonStr)));
-      
-      // Inject embedded book script before closing </body>
-      const injection = `\n  <script>window.EMBEDDED_BOOK="${base64}";</script>`;
-      const newHtml = currentHtml.replace('</body>', injection + '\n</body>');
-      
-      // Create download
-      const blob = new Blob([newHtml], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      var currentHtml = document.documentElement.outerHTML;
+      var bookData = { t: title, c: content, a: author || '', d: Date.now() };
+      var jsonStr = JSON.stringify(bookData);
+      var base64 = btoa(unescape(encodeURIComponent(jsonStr)));
+      var tag = '<' + '/script>';
+      var injection = '\n  <script>window.EMBEDDED_BOOK="' + base64 + '";' + tag;
+      var newHtml = currentHtml.replace('</body>', injection + '\n</body>');
+      var blob = new Blob([newHtml], { type: 'text/html' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
       a.href = url;
       a.download = sanitizeFilename(title) + '.html';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      
       showToast('Книга экспортирована! HTML-файл с книгой внутри.');
     }
     
