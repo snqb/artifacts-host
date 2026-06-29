@@ -252,26 +252,47 @@
     .book-columns {
       flex: 1;
       height: 100%;
-      overflow-x: auto;
-      overflow-y: hidden;
-      scroll-snap-type: x mandatory;
       scroll-behavior: smooth;
       scrollbar-width: none;
       -ms-overflow-style: none;
       line-height: 1.7;
       color: var(--text);
       column-fill: auto;
-      padding: 0 32px;
+      font-size: inherit;
     }
     .book-columns::-webkit-scrollbar { display: none; }
+    /* MOBILE: vertical scroll, one column, snap to headings */
     @media (max-width: 699px) {
-      .book-columns { column-width: calc(100vw - 64px); column-gap: 16px; }
+      .book-columns {
+        column-count: 1;
+        column-width: auto;
+        column-gap: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        scroll-snap-type: y proximity;
+        padding: 24px 24px;
+      }
     }
+    /* DESKTOP: horizontal columns, snap column-to-column */
     @media (min-width: 700px) and (max-width: 1099px) {
-      .book-columns { column-width: 320px; column-gap: 40px; padding: 0 40px; }
+      .book-columns {
+        column-width: 320px;
+        column-gap: 40px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        padding: 0 40px;
+      }
     }
     @media (min-width: 1100px) {
-      .book-columns { column-width: 360px; column-gap: 48px; padding: 0 48px; }
+      .book-columns {
+        column-width: 360px;
+        column-gap: 48px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        padding: 0 48px;
+      }
     }
     .book-columns * { max-width: 100%; }
     .book-columns img { height: auto; border-radius: 8px; }
@@ -313,6 +334,11 @@
     }
     .book-columns th { background: rgba(128,128,128,0.05); font-weight: 600; }
     .book-columns hr { border: none; border-top: 1px solid var(--border); margin: 1em 0; }
+    @media (max-width: 699px) {
+      .book-columns h1, .book-columns h2, .book-columns hr.chapter-break {
+        scroll-snap-align: start;
+      }
+    }
     .chapter-break {
       break-before: column;
       border: none;
@@ -927,8 +953,14 @@ Markdown поддерживается:
       
       // Restore scroll position
       requestAnimationFrame(() => {
-        const max = cols.scrollWidth - cols.clientWidth;
-        cols.scrollLeft = max * (book.position || 0);
+        const isMobile = window.innerWidth < 700;
+        if (isMobile) {
+          const max = cols.scrollHeight - cols.clientHeight;
+          cols.scrollTop = max * (book.position || 0);
+        } else {
+          const max = cols.scrollWidth - cols.clientWidth;
+          cols.scrollLeft = max * (book.position || 0);
+        }
         updateProgress();
       });
       
@@ -938,15 +970,23 @@ Markdown поддерживается:
     function updateProgress() {
       const cols = $('book-columns');
       if (!cols) return;
-      const max = cols.scrollWidth - cols.clientWidth;
-      const pct = max > 0 ? Math.round((cols.scrollLeft / max) * 100) : 0;
+      const isMobile = window.innerWidth < 700;
+      let max, current;
+      if (isMobile) {
+        max = cols.scrollHeight - cols.clientHeight;
+        current = cols.scrollTop;
+      } else {
+        max = cols.scrollWidth - cols.clientWidth;
+        current = cols.scrollLeft;
+      }
+      const pct = max > 0 ? Math.round((current / max) * 100) : 0;
       $('progress-pct').textContent = pct + '%';
       $('progress-fill').style.width = pct + '%';
       
       if (state.currentBook) {
         const book = state.books.find(b => b.id === state.currentBook);
         if (book) {
-          book.position = max > 0 ? cols.scrollLeft / max : 0;
+          book.position = max > 0 ? current / max : 0;
           saveBooks();
         }
       }
@@ -955,9 +995,16 @@ Markdown поддерживается:
     function scrollColumn(dir) {
       const cols = $('book-columns');
       const style = getComputedStyle(cols);
-      const colW = parseFloat(style.columnWidth) || cols.clientWidth * 0.8;
-      const gap = parseFloat(style.columnGap) || 32;
-      cols.scrollBy({ left: dir * (colW + gap), behavior: 'smooth' });
+      const isMobile = window.innerWidth < 700;
+      if (isMobile) {
+        // Vertical scroll: scroll by viewport height
+        cols.scrollBy({ top: dir * cols.clientHeight * 0.9, behavior: 'smooth' });
+      } else {
+        // Horizontal columns: scroll by column width
+        const colW = parseFloat(style.columnWidth) || cols.clientWidth * 0.8;
+        const gap = parseFloat(style.columnGap) || 32;
+        cols.scrollBy({ left: dir * (colW + gap), behavior: 'smooth' });
+      }
       setTimeout(updateProgress, 300);
     }
     
