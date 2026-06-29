@@ -575,7 +575,10 @@
       <div id="library-list"></div>
     </div>
     
-    <button class="mode-btn" id="btn-author-mode">✍️ Режим автора</button>
+    <div style="display: flex; gap: 12px; margin-top: 16px;">
+      <button class="mode-btn" id="btn-author-mode">✍️ Режим автора</button>
+      <button class="mode-btn" id="btn-export-library">📚 Сохранить библиотеку</button>
+    </div>
   </div>
   
   <!-- Author Screen -->
@@ -1271,6 +1274,7 @@ Markdown поддерживается:
     // Settings
     $('btn-settings').addEventListener('click', () => toggleSettings());
     $('btn-export').addEventListener('click', () => exportCurrentBook());
+    $('btn-export-library').addEventListener('click', () => exportLibrary());
     $('btn-back').addEventListener('click', () => {
       $('reader-screen').style.display = 'none';
       $('upload-screen').style.display = 'flex';
@@ -1364,6 +1368,31 @@ Markdown поддерживается:
       $('author-text').value = '';
     }
     
+    function exportLibrary() {
+      if (!state.books.length) {
+        showToast('Библиотека пуста');
+        return;
+      }
+      var currentHtml = document.documentElement.outerHTML;
+      var libData = { books: state.books.map(b => ({ t: b.title, c: b.content, p: b.position || 0 })), d: Date.now() };
+      var jsonStr = JSON.stringify(libData);
+      var base64 = btoa(unescape(encodeURIComponent(jsonStr)));
+      var tag = '<' + '/script>';
+      var injection = '\n  <script>window.EMBEDDED_LIBRARY="' + base64 + '";' + tag;
+      var bodyIdx = currentHtml.lastIndexOf('</body>');
+      var newHtml = currentHtml.substring(0, bodyIdx) + injection + '\n' + currentHtml.substring(bodyIdx);
+      var blob = new Blob([newHtml], { type: 'text/html' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'epubkg_library.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Библиотека сохранена (' + state.books.length + ' книг)');
+    }
+    
     function exportCurrentBook() {
       if (!state.currentBook) return;
       const book = state.books.find(b => b.id === state.currentBook);
@@ -1448,6 +1477,30 @@ Markdown поддерживается:
     
     // Always load books from IndexedDB first, then handle embedded/URL
     loadBooks().then(() => {
+      if (window.EMBEDDED_LIBRARY) {
+        try {
+          var json = decodeURIComponent(escape(atob(window.EMBEDDED_LIBRARY)));
+          var lib = JSON.parse(json);
+          if (lib.books && lib.books.length) {
+            lib.books.forEach(function(b) {
+              var id = 'lib_' + (b.t || 'book').replace(/[^a-zA-Z0-9]/g, '').substring(0, 20) + '_' + Math.random().toString(36).slice(2, 6);
+              state.books.unshift({
+                id: id,
+                title: b.t || 'Книга',
+                content: b.c || '',
+                position: b.p || 0,
+                totalWords: (b.c || '').replace(/<[^>]*>/g, '').split(/\s+/).length,
+                addedAt: Date.now()
+              });
+            });
+            if (state.books.length > 20) state.books = state.books.slice(0, 20);
+            saveBooks();
+            renderLibrary();
+            showToast('Библиотека загружена: ' + lib.books.length + ' книг');
+            return;
+          }
+        } catch(e) { console.error('Failed to load embedded library:', e); }
+      }
       if (window.EMBEDDED_BOOK) {
         try {
           const json = decodeURIComponent(escape(atob(window.EMBEDDED_BOOK)));
