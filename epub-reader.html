@@ -1446,30 +1446,41 @@ Markdown поддерживается:
     document.body.dataset.theme = state.theme;
     $('font-size-val').textContent = state.fontSize;
     
-    // Try to load embedded book first (self-contained publication)
-    if (window.EMBEDDED_BOOK) {
-      try {
-        const json = decodeURIComponent(escape(atob(window.EMBEDDED_BOOK)));
-        const data = JSON.parse(json);
-        const id = 'embedded_' + Date.now();
-        state.books.unshift({
-          id,
-          title: data.t || 'Книга',
-          content: data.c || '',
-          position: data.p || 0,
-          totalWords: (data.c || '').replace(/<[^>]*>/g, '').split(/\s+/).length,
-          addedAt: Date.now()
-        });
-        if (state.books.length > 20) state.books = state.books.slice(0, 20);
-        saveBooks(); // persist to IndexedDB
-        openBook(id);
-        showToast('Книга загружена');
-      } catch(e) { console.error('Failed to load embedded book:', e); }
-    } else {
-      loadBooks().then(() => {
-        if (!loadFromUrl()) renderLibrary();
-      });
-    }
+    // Always load books from IndexedDB first, then handle embedded/URL
+    loadBooks().then(() => {
+      if (window.EMBEDDED_BOOK) {
+        try {
+          const json = decodeURIComponent(escape(atob(window.EMBEDDED_BOOK)));
+          const data = JSON.parse(json);
+          // Stable ID based on title — avoids duplicates on refresh
+          const id = 'embedded_' + (data.t || 'book').replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+          // Check if already in library (from previous open)
+          let book = state.books.find(b => b.id === id);
+          if (book) {
+            // Update content if newer
+            book.title = data.t || book.title;
+            book.content = data.c || book.content;
+            book.position = data.p || book.position || 0;
+          } else {
+            book = {
+              id,
+              title: data.t || 'Книга',
+              content: data.c || '',
+              position: data.p || 0,
+              totalWords: (data.c || '').replace(/<[^>]*>/g, '').split(/\s+/).length,
+              addedAt: Date.now()
+            };
+            state.books.unshift(book);
+            if (state.books.length > 20) state.books = state.books.slice(0, 20);
+          }
+          saveBooks();
+          openBook(id);
+          showToast('Книга загружена');
+        } catch(e) { console.error('Failed to load embedded book:', e); renderLibrary(); }
+      } else if (!loadFromUrl()) {
+        renderLibrary();
+      }
+    });
   </script>
   <script>
     // Service Worker for offline reading
