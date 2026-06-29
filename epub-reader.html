@@ -1263,7 +1263,9 @@ Markdown поддерживается:
       var base64 = btoa(unescape(encodeURIComponent(jsonStr)));
       var tag = '<' + '/script>';
       var injection = '\n  <script>window.EMBEDDED_BOOK="' + base64 + '";' + tag;
-      var newHtml = currentHtml.replace('</body>', injection + '\n</body>');
+      // Use lastIndexOf to avoid matching </body> inside book content
+      var bodyIdx = currentHtml.lastIndexOf('</body>');
+      var newHtml = currentHtml.substring(0, bodyIdx) + injection + '\n' + currentHtml.substring(bodyIdx);
       var blob = new Blob([newHtml], { type: 'text/html' });
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
