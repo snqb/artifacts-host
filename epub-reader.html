@@ -456,29 +456,32 @@ Markdown поддерживается:
   async function loadBooks() {
     try {
       db = db || await openDB();
-      const tx = db.transaction(STORE_BOOKS, 'readonly');
-      await new Promise(resolve => {
+      const all = await new Promise(resolve => {
+        const tx = db.transaction(STORE_BOOKS, 'readonly');
         const req = tx.objectStore(STORE_BOOKS).getAll();
-        req.onsuccess = () => {
-          let books = req.result || [];
-          // Deduplicate by title — keep newest (highest addedAt), preserve best position
-          const seen = {};
-          books = books.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
-          books = books.filter(b => {
-            const key = (b.title || '').trim();
-            if (seen[key]) {
-              // Merge: keep higher position
-              seen[key].position = Math.max(seen[key].position || 0, b.position || 0);
-              return false;
-            }
-            seen[key] = b;
-            return true;
-          });
-          state.books = books;
-          resolve();
-        };
-        req.onerror = () => { state.books = []; resolve(); };
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => resolve([]);
       });
+
+      // Deduplicate by title — keep newest, merge position, delete orphans from DB
+      all.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+      const seen = {}, orphanIds = [];
+      for (const b of all) {
+        const key = (b.title || '').trim();
+        if (seen[key]) {
+          seen[key].position = Math.max(seen[key].position || 0, b.position || 0);
+          orphanIds.push(b.id);
+        } else {
+          seen[key] = b;
+        }
+      }
+      state.books = Object.values(seen);
+
+      // Delete orphan duplicates from IndexedDB
+      if (orphanIds.length) {
+        const tx = db.transaction(STORE_BOOKS, 'readwrite');
+        for (const id of orphanIds) tx.objectStore(STORE_BOOKS).delete(id);
+      }
     } catch { state.books = []; }
   }
 
@@ -729,11 +732,10 @@ Markdown поддерживается:
   }
 
   async function addBook(title, content) {
-    // Check if book with same title already exists — update instead of duplicate
+    // If same title exists — update content, keep position
     const existing = state.books.find(b => (b.title || '').trim() === (title || '').trim());
     if (existing) {
       existing.content = content;
-      existing.position = 0;
       existing.totalWords = content.replace(/<[^>]*>/g, '').split(/\s+/).length;
       existing.addedAt = Date.now();
       saveBooks();
@@ -861,16 +863,24 @@ Markdown поддерживается:
     if (!bookParam) return false;
     try {
       const payload = JSON.parse(decodeURIComponent(escape(atob(bookParam))));
-      const id = 'url_' + Date.now().toString(36);
-      state.books.unshift({
-        id, title: payload.t || 'Книга', content: payload.c || '',
-        position: payload.p || 0,
-        totalWords: (payload.c || '').replace(/<[^>]*>/g, '').split(/\s+/).length,
-        addedAt: Date.now()
-      });
-      if (state.books.length > MAX_BOOKS) state.books = state.books.slice(0, MAX_BOOKS);
-      saveBooks();
-      openBook(id);
+      const title = (payload.t || 'Книга').trim();
+      let existing = state.books.find(b => (b.title || '').trim() === title);
+      if (existing) {
+        existing.content = payload.c || existing.content;
+        existing.position = payload.p || existing.position || 0;
+        saveBooks();
+        openBook(existing.id);
+      } else {
+        const id = makeBookId(title);
+        state.books.unshift({
+          id, title, content: payload.c || '', position: payload.p || 0,
+          totalWords: (payload.c || '').replace(/<[^>]*>/g, '').split(/\s+/).length,
+          addedAt: Date.now()
+        });
+        if (state.books.length > MAX_BOOKS) state.books = state.books.slice(0, MAX_BOOKS);
+        saveBooks();
+        openBook(id);
+      }
       showToast('Книга загружена из ссылки');
       return true;
     } catch { return false; }
@@ -1047,17 +1057,25 @@ Markdown поддерживается:
       try {
         const lib = JSON.parse(decodeURIComponent(escape(atob(window.EMBEDDED_LIBRARY))));
         if (lib.books?.length) {
-          lib.books.forEach(b => {
-            const id = 'lib_' + (b.t || 'book').replace(/[^a-zA-Z0-9]/g, '').substring(0, 20) + '_' + Math.random().toString(36).slice(2, 6);
-            state.books.unshift({
-              id, title: b.t || 'Книга', content: b.c || '', position: b.p || 0,
-              totalWords: (b.c || '').replace(/<[^>]*>/g, '').split(/\s+/).length, addedAt: Date.now()
-            });
-          });
+          let added = 0;
+          for (const b of lib.books) {
+            const title = (b.t || 'Книга').trim();
+            let existing = state.books.find(s => (s.title || '').trim() === title);
+            if (existing) {
+              existing.content = b.c || existing.content;
+              existing.position = b.p || existing.position || 0;
+            } else {
+              state.books.unshift({
+                id: makeBookId(title), title, content: b.c || '', position: b.p || 0,
+                totalWords: (b.c || '').replace(/<[^>]*>/g, '').split(/\s+/).length, addedAt: Date.now()
+              });
+              added++;
+            }
+          }
           if (state.books.length > MAX_BOOKS) state.books = state.books.slice(0, MAX_BOOKS);
           saveBooks();
           renderLibrary();
-          showToast(`Библиотека загружена: ${lib.books.length} книг`);
+          showToast(`Библиотека загружена: ${added} новых, ${lib.books.length - added} обновлено`);
           return;
         }
       } catch (e) { console.error('Failed to load embedded library:', e); }
@@ -1066,22 +1084,22 @@ Markdown поддерживается:
     if (window.EMBEDDED_BOOK) {
       try {
         const data = JSON.parse(decodeURIComponent(escape(atob(window.EMBEDDED_BOOK))));
-        const id = 'embedded_' + (data.t || 'book').replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
-        let book = state.books.find(b => b.id === id);
+        const title = (data.t || 'Книга').trim();
+        // Find by title, not ID — handles re-export of same book
+        let book = state.books.find(b => (b.title || '').trim() === title);
         if (book) {
-          book.title = data.t || book.title;
           book.content = data.c || book.content;
           book.position = data.p || book.position || 0;
         } else {
           book = {
-            id, title: data.t || 'Книга', content: data.c || '', position: data.p || 0,
+            id: makeBookId(title), title, content: data.c || '', position: data.p || 0,
             totalWords: (data.c || '').replace(/<[^>]*>/g, '').split(/\s+/).length, addedAt: Date.now()
           };
           state.books.unshift(book);
           if (state.books.length > MAX_BOOKS) state.books = state.books.slice(0, MAX_BOOKS);
         }
         saveBooks();
-        openBook(id);
+        openBook(book.id);
         showToast('Книга загружена');
         return;
       } catch (e) { console.error('Failed to load embedded book:', e); }
