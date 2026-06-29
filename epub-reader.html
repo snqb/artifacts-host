@@ -301,6 +301,15 @@
     }
     .author-textarea:focus { outline: none; border-color: var(--accent); }
 
+    /* ===== LOADER ===== */
+    .loader {
+      width: 40px; height: 40px; border: 3px solid var(--border);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin 0.6s linear infinite; margin: 20px auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader-hidden { display: none; }
+
     /* ===== MOBILE ===== */
     @media (max-width: 480px) {
       .logo { font-size: 2rem; }
@@ -321,6 +330,7 @@
         <path d="M12 4v12m0 0l-4-4m4 4l4-4"/>
         <path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
       </svg>
+      <div class="loader loader-hidden" id="loader"></div>
       <p>Перетащите файл или нажмите</p>
       <small>.txt, .md, .docx, .epub</small>
     </div>
@@ -439,26 +449,33 @@ Markdown поддерживается:
   // ===== STATE =====
   const state = { books: [], currentBook: null, fontSize: 18, theme: 'light' };
   let db = null;
+  let saveDebounce = 0;
+  const mobileQuery = window.matchMedia('(max-width: 699px)');
+  function isMobile() { return mobileQuery.matches; }
+
+  function debouncedSave() {
+    if (saveDebounce) return;
+    saveDebounce = setTimeout(() => { saveBooks(); saveDebounce = 0; }, 2000);
+  }
 
   // ===== STORAGE: IndexedDB =====
-  function openDB() {
-    return new Promise((resolve, reject) => {
-      const req = indexedDB.open(DB_NAME, 1);
-      req.onupgradeneeded = e => {
-        const d = e.target.result;
-        if (!d.objectStoreNames.contains(STORE_BOOKS)) d.createObjectStore(STORE_BOOKS, { keyPath: 'id' });
-      };
-      req.onsuccess = e => resolve(e.target.result);
-      req.onerror = e => reject(e.target.error);
-    });
-  }
+  const dbPromise = new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains(STORE_BOOKS)) d.createObjectStore(STORE_BOOKS, { keyPath: 'id' });
+    };
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror = e => reject(e.target.error);
+  });
+
+  async function ensureDB() { return db || (db = await dbPromise); }
 
   async function loadBooks() {
     try {
-      db = db || await openDB();
+      db = await ensureDB();
       const all = await new Promise(resolve => {
-        const tx = db.transaction(STORE_BOOKS, 'readonly');
-        const req = tx.objectStore(STORE_BOOKS).getAll();
+          const req = tx.objectStore(STORE_BOOKS).getAll();
         req.onsuccess = () => resolve(req.result || []);
         req.onerror = () => resolve([]);
       });
@@ -487,14 +504,14 @@ Markdown поддерживается:
 
   async function saveBooks() {
     try {
-      db = db || await openDB();
+      db = await ensureDB();
       const tx = db.transaction(STORE_BOOKS, 'readwrite');
       for (const b of state.books) tx.objectStore(STORE_BOOKS).put(b);
     } catch (e) { console.warn('IndexedDB save failed:', e.message); }
   }
 
   async function deleteBookFromDB(id) {
-    try { db = db || await openDB(); db.transaction(STORE_BOOKS, 'readwrite').objectStore(STORE_BOOKS).delete(id); }
+    try { db = await ensureDB(); db.transaction(STORE_BOOKS, 'readwrite').objectStore(STORE_BOOKS).delete(id); }
     catch {}
   }
 
@@ -518,21 +535,23 @@ Markdown поддерживается:
     setTimeout(() => t.classList.remove('show'), 2000);
   }
 
-  function escapeHtml(text) {
-    const d = document.createElement('div');
-    d.textContent = text;
-    return d.innerHTML;
+  function escapeHtml(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   function sanitizeFilename(name) {
-    return name.replace(/[^a-zA-Zа-яА-Я0-9\-_ ]/g, '').replace(/\s+/g, '_').substring(0, 50);
+    const clean = name.replace(/[^a-zA-Zа-яА-Я0-9\-_ ]/g, '').replace(/\s+/g, '_');
+    if (clean.length <= 50) return clean;
+    const truncated = clean.substring(0, 50);
+    const lastSep = truncated.lastIndexOf('_');
+    return lastSep > 20 ? truncated.substring(0, lastSep) : truncated;
   }
 
   function formatDate(ts) {
     return new Date(ts).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
   }
 
-  function isMobile() { return window.innerWidth < 700; }
 
   function loadScript(src) {
     return new Promise((resolve, reject) => {
@@ -544,7 +563,11 @@ Markdown поддерживается:
   }
 
   // ===== FILE PARSING =====
+  function showLoader() { $('loader').classList.remove('loader-hidden'); }
+  function hideLoader() { $('loader').classList.add('loader-hidden'); }
+
   async function handleFile(file) {
+    showLoader();
     try {
       const ext = file.name.split('.').pop().toLowerCase();
       let content = '', title = file.name.replace(/\.[^/.]+$/, '');
@@ -560,11 +583,14 @@ Markdown поддерживается:
         content = r.content; title = r.title || title;
       } else {
         showToast('Формат не поддерживается');
+        hideLoader();
         return;
       }
       addBook(title, content);
+      hideLoader();
     } catch (e) {
       console.error('handleFile error:', e);
+      hideLoader();
       showToast('Ошибка: ' + e.message);
     }
   }
@@ -678,6 +704,7 @@ Markdown поддерживается:
 
     // Pre-load all images into base64 cache
     const imageCache = {};
+    const basenameIndex = {}; // basename → full path
     const zipFiles = Object.keys(zip.files).filter(f => !f.endsWith('/'));
     for (const f of zipFiles) {
       const ext = f.split('.').pop().toLowerCase();
@@ -685,20 +712,23 @@ Markdown поддерживается:
       try {
         const b64 = await zip.file(f).async('base64');
         imageCache[f] = `data:${IMG_EXTS[ext]};base64,${b64}`;
-        imageCache[f.split('/').pop()] = imageCache[f]; // basename alias
+        imageCache[f.split('/').pop()] = imageCache[f];
+        // Build basename index for fast lookup
+        const bn = f.split('/').pop().toLowerCase();
+        if (!basenameIndex[bn]) basenameIndex[bn] = f;
       } catch {}
     }
 
-    // Resolve image path: try multiple strategies
+    // Resolve image path: O(1) lookup via candidates + basename index
     function resolveImage(src, chapterPath) {
       if (src.startsWith('data:')) return null;
       const basename = src.split('/').pop();
       const chapterDir = chapterPath.includes('/') ? chapterPath.substring(0, chapterPath.lastIndexOf('/') + 1) : '';
       const candidates = [src, basename, opfDir + src, opfDir + basename, chapterDir + src];
       for (const c of candidates) if (imageCache[c]) return imageCache[c];
-      // Last resort: scan all zip files for matching basename
-      for (const zf of zipFiles) if (zf.split('/').pop() === basename && imageCache[zf]) return imageCache[zf];
-      return null;
+      // Fast lookup via basename index
+      const idxPath = basenameIndex[basename.toLowerCase()];
+      return idxPath && imageCache[idxPath] ? imageCache[idxPath] : null;
     }
 
     // Read chapters in spine order
@@ -754,7 +784,7 @@ Markdown поддерживается:
     if (state.books.length > MAX_BOOKS) {
       const removed = state.books.slice(MAX_BOOKS);
       state.books = state.books.slice(0, MAX_BOOKS);
-      removed.forEach(r => deleteBookFromDB(r.id));
+      deleteBooksFromDB(removed.map(r => r.id));
     }
     saveBooks();
     openBook(book.id);
@@ -801,7 +831,7 @@ Markdown поддерживается:
 
     if (state.currentBook) {
       const book = state.books.find(b => b.id === state.currentBook);
-      if (book) { book.position = max > 0 ? current / max : 0; saveBooks(); }
+      if (book) { book.position = max > 0 ? current / max : 0; debouncedSave(); }
     }
   }
 
@@ -842,10 +872,18 @@ Markdown поддерживается:
       </div>`;
     }).join('');
 
-    list.querySelectorAll('.book-item').forEach(item => {
-      item.addEventListener('click', () => openBook(item.dataset.id));
-    });
+    // Use event delegation — single listener for all items
+    if (!list._hasDelegation) {
+      list.addEventListener('click', e => {
+        const item = e.target.closest('.book-item');
+        if (item) openBook(item.dataset.id);
+      });
+      list._hasDelegation = true;
+    }
   }
+  
+  // Bind delegation on first render
+  renderLibrary._first = true;
 
   // ===== SHAREABLE URL =====
   function updateShareUrl() {
@@ -976,7 +1014,7 @@ Markdown поддерживается:
     // File upload
     $('dropZone').addEventListener('click', () => $('file-input').click());
     $('dropZone').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('file-input').click(); } });
-    $('file-input').addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+    $('file-input').addEventListener('change', e => { if (e.target.files[0]) { handleFile(e.target.files[0]); e.target.value = ''; } });
 
     // Drag & drop
     ['dragover', 'dragenter'].forEach(evt => {
@@ -1110,15 +1148,7 @@ Markdown поддерживается:
 
   init();
 
-  // ===== SERVICE WORKER (offline) =====
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('data:text/javascript;base64,' + btoa(`
-      self.addEventListener('install', e => self.skipWaiting());
-      self.addEventListener('activate', e => e.waitUntil(clients.claim()));
-      self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
-    `)).catch(() => {});
-  }
-
+  // Service worker not used (data: URLs not supported for SW origin). PWA install via manifest only.
   let deferredPrompt;
   window.addEventListener('beforeinstallprompt', e => { deferredPrompt = e; });
   </script>
